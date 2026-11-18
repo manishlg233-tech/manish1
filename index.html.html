@@ -1,0 +1,2615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vande Bharat Express - Troubleshooting Assistant</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    /* Custom scrollbar and subtle glowing indicators */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--card-border, #4b5563); border-radius: 3px; }
+    .cockpit-glow {
+      box-shadow: 0 0 15px -3px rgba(59, 130, 246, 0.15);
+    }
+  </style>
+</head>
+<body class="bg-[var(--background,#0f172a)] text-[var(--foreground,#f8fafc)] antialiased p-3 md:p-6 min-h-screen">
+  <div class="max-w-7xl mx-auto space-y-4">
+
+    <!-- Top Cockpit Header -->
+    <header class="bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-xl p-4 cockpit-glow">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-600 via-indigo-600 to-amber-500 flex items-center justify-center font-bold text-white shadow-lg text-xl tracking-wider">
+            VB
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-lg md:text-xl font-bold tracking-tight">Vande Bharat Express Troubleshooting AI</h1>
+              <span class="px-2 py-0.5 text-[10px] font-semibold tracking-wider rounded uppercase bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                Trainset 18 / V2.0
+              </span>
+            </div>
+            <p class="text-xs text-[var(--muted-foreground,#94a3b8)]">
+              Reference: <span class="font-mono text-amber-400">IRCAMTECH/RDSO En-Route Troubleshooting Handbook</span> | Loco Pilot & Maintenance SOP
+            </p>
+          </div>
+        </div>
+
+        <!-- Telemetry & Status Badges -->
+        <div class="flex items-center gap-2 md:gap-3 text-xs flex-wrap">
+          <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--background,#0f172a)] border border-[var(--card-border,#334155)]">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="text-[var(--muted-foreground,#94a3b8)]">TCMS Link:</span>
+            <span class="font-medium text-emerald-400">Active</span>
+          </div>
+          <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--background,#0f172a)] border border-[var(--card-border,#334155)]">
+            <span class="text-[var(--muted-foreground,#94a3b8)]">Manual:</span>
+            <span id="manual-status-badge" class="font-medium text-blue-400">8 SOPs Pre-loaded</span>
+          </div>
+          <button id="theme-toggle" class="p-1.5 rounded-md hover:bg-[var(--card-border,#334155)] text-[var(--muted-foreground,#94a3b8)] transition-colors" title="Toggle quick contrast">
+            💡
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="flex items-center gap-2 mt-4 pt-3 border-t border-[var(--card-border,#334155)] overflow-x-auto text-xs font-medium">
+        <button data-tab="tab-chat" class="tab-btn active px-3.5 py-2 rounded-lg bg-[var(--primary,#2563eb)] text-white transition-all flex items-center gap-2 shadow">
+          <span>💬</span> AI Troubleshooter
+        </button>
+        <button data-tab="tab-pdf" class="tab-btn px-3.5 py-2 rounded-lg bg-[var(--card,#1e293b)] hover:bg-[var(--border,#334155)] text-[var(--muted-foreground,#94a3b8)] transition-all flex items-center gap-2">
+          <span>📄</span> PDF Manual & Ingestion
+        </button>
+        <button data-tab="tab-matrix" class="tab-btn px-3.5 py-2 rounded-lg bg-[var(--card,#1e293b)] hover:bg-[var(--border,#334155)] text-[var(--muted-foreground,#94a3b8)] transition-all flex items-center gap-2">
+          <span>⚡</span> DDU Fault Matrix
+        </button>
+        <button data-tab="tab-report" class="tab-btn px-3.5 py-2 rounded-lg bg-[var(--card,#1e293b)] hover:bg-[var(--border,#334155)] text-[var(--muted-foreground,#94a3b8)] transition-all flex items-center gap-2">
+          <span>📋</span> Incident Log Card
+        </button>
+      </nav>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+      <!-- ================= TAB 1: CHATBOT ================= -->
+      <section id="tab-chat" class="tab-content lg:col-span-12 space-y-4">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          
+          <!-- Chat Window (8 cols) -->
+          <div class="lg:col-span-8 flex flex-col h-[680px] bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-xl overflow-hidden shadow-lg">
+            
+            <!-- Chat Header -->
+            <div class="p-3.5 px-4 bg-[var(--sidebar,#0f172a)]/60 border-b border-[var(--card-border,#334155)] flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                <span class="font-semibold text-xs tracking-wide">Vande Bharat Intelligent Diagnostic Engine</span>
+              </div>
+              <div class="text-[11px] text-[var(--muted-foreground,#94a3b8)] flex items-center gap-2">
+                <span id="doc-source-label">Reference: CAMTECH Official Manual</span>
+                <button id="clear-chat" class="hover:text-red-400 transition-colors ml-2" title="Clear chat history">Clear</button>
+              </div>
+            </div>
+
+            <!-- Messages Stream -->
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4 text-xs md:text-sm">
+              <!-- Initial Bot Welcome -->
+              <div class="flex items-start gap-3">
+                <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs shrink-0 shadow">
+                  VB
+                </div>
+                <div class="bg-[var(--background,#0f172a)] border border-[var(--card-border,#334155)] rounded-2xl rounded-tl-none p-3.5 max-w-[88%] space-y-2 shadow-sm">
+                  <p class="font-medium text-[var(--foreground,#f8fafc)]">
+                    Namaste Loco Pilot / Maintenance Engineer. I am your specialized <span class="text-blue-400 font-semibold">Vande Bharat (Train 18) En-Route Troubleshooting Assistant</span>.
+                  </p>
+                  <p class="text-[var(--muted-foreground,#94a3b8)] text-xs">
+                    I reference official IRCAMTECH/RDSO troubleshooting handbooks. Ask about any en-route failure, DDU fault code, or choose a quick diagnostic symptom below:
+                  </p>
+                  <div class="pt-1 flex flex-wrap gap-1.5">
+                    <button class="quick-chip px-2.5 py-1 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs transition-colors font-medium shadow-sm" data-query="SMI-2024/B/1 Centre Pivot Pin">
+                      🔩 SMI: Centre Pivot Pin (SMI-2024/B/1)
+                    </button>
+                    <button class="quick-chip px-2.5 py-1 rounded-full bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs transition-colors" data-query="12803">
+                      🚪 Code 12803 (ADCR Door Loop)
+                    </button>
+                    <button class="quick-chip px-2.5 py-1 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs transition-colors" data-query="17051">
+                      🛑 Code 17051 (Locked Axle)
+                    </button>
+                    <button class="quick-chip px-2.5 py-1 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs transition-colors" data-query="10767">
+                      ⚡ Code 10767 (ACU Input Under Voltage)
+                    </button>
+                    <button class="quick-chip px-2.5 py-1 rounded-full bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 text-xs transition-colors" data-query="14613">
+                      ❄️ Code 14613 (HVAC Low Pressure Switch)
+                    </button>
+                    <button class="quick-chip px-2.5 py-1 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs transition-colors" data-query="31232">
+                      📡 Code 31232 (GPS Comm Fail)
+                    </button>
+                    <button class="quick-chip px-2.5 py-1 rounded-full bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs transition-colors" data-query="14672">
+                      🌀 Code 14672 (VFD Inverter Trip)
+                    </button>
+                    <button class="quick-chip px-2.5 py-1 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs transition-colors" data-query="560">
+                      🛞 Code 560 (Suspension Bellow Deflated)
+                    </button>
+                    <button class="quick-chip px-2.5 py-1 rounded-full bg-zinc-500/10 hover:bg-zinc-500/20 text-zinc-300 border border-zinc-500/30 text-xs transition-colors" data-query="Chapters Overview">
+                      📚 Chapters 1-7 Overview
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Chat Input Form -->
+            <form id="chat-form" class="p-3 bg-[var(--sidebar,#0f172a)]/40 border-t border-[var(--card-border,#334155)] flex items-center gap-2">
+              <input 
+                id="chat-input" 
+                type="text" 
+                placeholder="Describe fault (e.g., 'EP brake stuck in MC2', 'ADCR bypass switch location', 'ERR-PROP-03')..." 
+                class="flex-1 bg-[var(--background,#0f172a)] border border-[var(--card-border,#334155)] rounded-lg px-3.5 py-2.5 text-xs md:text-sm text-[var(--foreground,#f8fafc)] focus:outline-none focus:border-blue-500 transition-colors"
+                autocomplete="off"
+              />
+              <button 
+                type="submit" 
+                class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg text-xs md:text-sm transition-all flex items-center gap-1.5 shadow"
+              >
+                <span>Send</span>
+                <span>➔</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- Quick Assistance & Telemetry Sidebar (4 cols) -->
+          <div class="lg:col-span-4 space-y-4">
+            
+            <!-- Loco Pilot Emergency Safety Card -->
+            <div class="bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-xl p-4 space-y-3 shadow-sm">
+              <div class="flex items-center justify-between">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                  <span>⚠️</span> Mandatory Speed Limits ($V_{max}$)
+                </h3>
+                <span class="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30">Official SOP</span>
+              </div>
+
+              <!-- 16-Car vs 8-Car Bogie Isolation Comparative Table -->
+              <div class="space-y-1.5 text-xs">
+                <div class="flex items-center justify-between text-[11px] font-semibold text-zinc-400 pb-1 border-b border-[var(--card-border,#334155)]">
+                  <span>Bogie Isolation Condition</span>
+                  <span class="font-mono text-blue-400">16-Car / 8-Car</span>
+                </div>
+                <div class="flex items-center justify-between py-1 border-b border-[var(--card-border,#334155)]">
+                  <span class="text-zinc-300">1 Bogie Isolated</span>
+                  <span class="font-mono font-bold text-emerald-400">155 / 150 km/h</span>
+                </div>
+                <div class="flex items-center justify-between py-1 border-b border-[var(--card-border,#334155)]">
+                  <span class="text-zinc-300">2 Bogies Isolated</span>
+                  <span class="font-mono font-bold text-emerald-400">150 / 140 km/h</span>
+                </div>
+                <div class="flex items-center justify-between py-1 border-b border-[var(--card-border,#334155)]">
+                  <span class="text-zinc-300">3 Bogies Isolated</span>
+                  <span class="font-mono font-bold text-amber-400">145 / 120 km/h</span>
+                </div>
+                <div class="flex items-center justify-between py-1 border-b border-[var(--card-border,#334155)]">
+                  <span class="text-zinc-300">4 Bogies Isolated</span>
+                  <span class="font-mono font-bold text-amber-400">140 / 90 km/h</span>
+                </div>
+                <div class="flex items-center justify-between py-1 border-b border-[var(--card-border,#334155)]">
+                  <span class="text-zinc-300">Air Spring Deflated (Bump Stop)</span>
+                  <span class="font-mono font-bold text-red-400">60 km/h (Strict)</span>
+                </div>
+                <div class="flex items-center justify-between py-1 border-b border-[var(--card-border,#334155)]">
+                  <span class="text-zinc-300">Locked Axle (Genuine)</span>
+                  <span class="font-mono font-bold text-red-500">0 km/h (Halt)</span>
+                </div>
+                <div class="flex items-center justify-between pt-0.5">
+                  <span class="text-zinc-300">Door Open (ADCR Broken)</span>
+                  <span class="font-mono font-bold text-red-500">0 km/h (Halt)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Critical Isolation Points Reference -->
+            <div class="bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-xl p-4 space-y-3">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
+                <span>📍</span> Critical Isolation Locations
+              </h3>
+              <div class="space-y-2 text-xs">
+                <div class="p-2 rounded bg-[var(--background,#0f172a)] border border-[var(--card-border,#334155)]">
+                  <div class="font-semibold text-emerald-400">CRW (Cab Rear Wall) Panel</div>
+                  <div class="text-[11px] text-[var(--muted-foreground,#94a3b8)]">ADCR Bypass Switch, Battery Normal (BN) Switch, PB Release Button, Traction Reset.</div>
+                </div>
+                <div class="p-2 rounded bg-[var(--background,#0f172a)] border border-[var(--card-border,#334155)]">
+                  <div class="font-semibold text-blue-400">Underframe Solebar (Per Bogie)</div>
+                  <div class="text-[11px] text-[var(--muted-foreground,#94a3b8)]">Brake Isolating Cock (BIC), Air Spring Isolating Cock, Parking Brake Manual Ring.</div>
+                </div>
+                <div class="p-2 rounded bg-[var(--background,#0f172a)] border border-[var(--card-border,#334155)]">
+                  <div class="font-semibold text-amber-400">LDCB (Above Passenger Door)</div>
+                  <div class="text-[11px] text-[var(--muted-foreground,#94a3b8)]">Square-key manual Door Isolation Mechanism for mechanical dead-lock.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PDF Quick Status Box -->
+            <div class="bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-xl p-4 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase text-[var(--foreground,#f8fafc)]">PDF Ingestion Engine</span>
+                <span id="pdf-loaded-badge" class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30">Ready</span>
+              </div>
+              <p class="text-[11px] text-[var(--muted-foreground,#94a3b8)]">
+                Have a division-specific Vande Bharat PDF manual? Upload it in the <strong>PDF Manual</strong> tab to query your exact file!
+              </p>
+              <button onclick="switchTab('tab-pdf')" class="w-full mt-2 py-1.5 px-3 bg-[var(--border,#334155)] hover:bg-blue-600 hover:text-white rounded text-xs text-center font-medium transition-colors">
+                Open PDF Ingestion & Reader ➔
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ================= TAB 2: PDF MANUAL & INGESTION ================= -->
+      <section id="tab-pdf" class="tab-content lg:col-span-12 hidden space-y-4">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          
+          <!-- Left: PDF Ingestion / Upload & Chapter List (4 cols) -->
+          <div class="lg:col-span-4 space-y-4">
+            
+            <!-- Upload Box -->
+            <div class="bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-xl p-4 space-y-3">
+              <h2 class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
+                <span>📤</span> Ingest Custom PDF Document
+              </h2>
+              <p class="text-xs text-[var(--muted-foreground,#94a3b8)]">
+                Upload any official Vande Bharat PDF manual, circular, or maintenance guideline. The in-browser text engine will index pages for the chatbot.
+              </p>
+
+              <div id="drop-zone" class="border-2 border-dashed border-[var(--card-border,#334155)] hover:border-blue-500 rounded-lg p-5 text-center cursor-pointer transition-colors bg-[var(--background,#0f172a)]/40">
+                <input type="file" id="pdf-file-input" accept=".pdf,.txt,.json,.md" class="hidden">
+                <div class="text-2xl mb-1">📑</div>
+                <div class="text-xs font-medium text-[var(--foreground,#f8fafc)]">Click to choose or Drag & Drop PDF</div>
+                <div class="text-[10px] text-[var(--muted-foreground,#94a3b8)] mt-1">Accepts .pdf, .txt, .md manuals</div>
+              </div>
+
+              <div id="upload-status" class="hidden text-xs p-2.5 rounded bg-blue-500/10 border border-blue-500/30 text-blue-300">
+                <div class="flex items-center gap-2">
+                  <span class="animate-spin text-sm">⏳</span>
+                  <span id="upload-status-text">Parsing and indexing document...</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Preloaded Official Manual Sections -->
+            <div class="bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-xl p-4 space-y-3">
+              <div class="flex items-center justify-between">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-[var(--foreground,#f8fafc)]">
+                  Official Manual Index
+                </h2>
+                <span class="text-[10px] font-mono text-amber-400">CAMTECH 2023-24</span>
+              </div>
+              <div id="manual-sections-list" class="space-y-1.5 max-h-[380px] overflow-y-auto pr-1 text-xs">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Right: Document & SOP Viewer (8 cols) -->
+          <div class="lg:col-span-8 bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-xl p-5 space-y-4">
+            <div class="flex flex-col md:flex-row md:items-center justify-between pb-3 border-b border-[var(--card-border,#334155)] gap-2">
+              <div>
+                <span id="viewer-badge" class="px-2 py-0.5 text-[10px] font-semibold rounded uppercase bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                  Section Reference
+                </span>
+                <h3 id="viewer-title" class="text-base font-bold mt-1">Select a section or document to inspect</h3>
+                <p id="viewer-meta" class="text-xs text-[var(--muted-foreground,#94a3b8)]">Reference citations, safety speeds, and isolation valve paths</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <input 
+                  type="text" 
+                  id="manual-search-input" 
+                  placeholder="Search inside manual..." 
+                  class="bg-[var(--background,#0f172a)] border border-[var(--card-border,#334155)] rounded px-3 py-1.5 text-xs text-[var(--foreground,#f8fafc)] focus:outline-none focus:border-blue-500"
+                />
+              </div>
+            </div>
+
+            <div id="viewer-content" class="space-y-4 max-h-[540px] overflow-y-auto pr-2 text-xs md:text-sm">
+              <div class="text-center py-16 text-[var(--muted-foreground,#94a3b8)] space-y-2">
+                <div class="text-4xl">📖</div>
+                <p class="font-medium text-sm">Select any section on the left or search keywords above.</p>
+                <p class="text-xs">You can also upload any external Vande Bharat troubleshooting manual PDF to browse its parsed pages here.</p>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ================= TAB 3: DDU FAULT MATRIX ================= -->
+      <section id="tab-matrix" class="tab-content lg:col-span-12 hidden space-y-4">
+        <div class="bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-xl p-4 md:p-5 space-y-4">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div>
+              <h2 class="text-base font-bold flex items-center gap-2">
+                <span>⚡</span> Driver Display Unit (DDU) Fault Code Decoder
+              </h2>
+              <p class="text-xs text-[var(--muted-foreground,#94a3b8)]">
+                Direct lookup matrix for standard TCMS en-route failure annunciations. Click any code for instant troubleshooting SOP.
+              </p>
+            </div>
+            <div class="flex items-center gap-2">
+              <select id="matrix-subsystem-filter" class="bg-[var(--background,#0f172a)] border border-[var(--card-border,#334155)] rounded-lg px-3 py-1.5 text-xs text-[var(--foreground,#f8fafc)] focus:outline-none">
+                <option value="ALL">All Subsystems (Chapters 1–7)</option>
+                <option value="Doors & Access Interlocks">Doors & Access (Ch. 2)</option>
+                <option value="Braking System">Braking System (Ch. 2)</option>
+                <option value="High Voltage & Pantograph">High Voltage & Pantograph (Ch. 2)</option>
+                <option value="Propulsion & Traction">Propulsion & Traction (Ch. 4)</option>
+                <option value="Suspension & Bogie">Suspension & Bogie (Ch. 2)</option>
+                <option value="Auxiliary Power (ACU)">Auxiliary Converter ACU (Ch. 3)</option>
+                <option value="VFD Systems">VFD Systems (Ch. 5)</option>
+                <option value="HVAC & Ventilation">HVAC & Ventilation (Ch. 6)</option>
+                <option value="PIS & CCTV">PIS & CCTV (Ch. 7)</option>
+                <option value="Fire Safety & HVAC">Fire Safety (Ch. 2)</option>
+                <option value="TCMS & Control Electronics">TCMS & Control Electronics</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Fault Code Cards Grid -->
+          <div id="fault-matrix-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB 4: INCIDENT REPORT CARD ================= -->
+      <section id="tab-report" class="tab-content lg:col-span-12 hidden space-y-4">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          
+          <!-- Form (5 cols) -->
+          <div class="lg:col-span-5 bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-xl p-5 space-y-3">
+            <h2 class="text-sm font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
+              <span>📋</span> En-Route Defect & Action Log
+            </h2>
+            <p class="text-xs text-[var(--muted-foreground,#94a3b8)]">
+              Generate an official Indian Railways compliant en-route failure report for loco pilots, train managers, and depot staff.
+            </p>
+
+            <form id="incident-form" class="space-y-3 text-xs">
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[var(--muted-foreground,#94a3b8)] mb-1">Train No. & Name</label>
+                  <input type="text" id="rep-train-no" value="20643 Vande Bharat" class="w-full bg-[var(--background,#0f172a)] border border-[var(--card-border,#334155)] rounded p-2 text-[var(--foreground,#f8fafc)] focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-[var(--muted-foreground,#94a3b8)] mb-1">Coach Number</label>
+                  <input type="text" id="rep-coach-no" value="MC-2 (C4)" class="w-full bg-[var(--background,#0f172a)] border border-[var(--card-border,#334155)] rounded p-2 text-[var(--foreground,#f8fafc)] focus:outline-none">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[var(--muted-foreground,#94a3b8)] mb-1">Loco Pilot Name / ID</label>
+                  <input type="text" id="rep-lp-name" value="LP S. Kumar (ID: 4892)" class="w-full bg-[var(--background,#0f172a)] border border-[var(--card-border,#334155)] rounded p-2 text-[var(--foreground,#f8fafc)] focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-[var(--muted-foreground,#94a3b8)] mb-1">Section / Location</label>
+                  <input type="text" id="rep-location" value="KM 142/6 (MAS-SBC Section)" class="w-full bg-[var(--background,#0f172a)] border border-[var(--card-border,#334155)] rounded p-2 text-[var(--foreground,#f8fafc)] focus:outline-none">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-[var(--muted-foreground,#94a3b8)] mb-1">Fault / DDU Diagnostic Code</label>
+                <select id="rep-fault-select" class="w-full bg-[var(--background,#0f172a)] border border-[var(--card-border,#334155)] rounded p-2 text-[var(--foreground,#f8fafc)] focus:outline-none">
+                  <option value="Brake Binding / Bogie 1 BIC Cock Isolated">Brake Binding (ERR-BRK-04)</option>
+                  <option value="ADCR Door Proving Loop Bypass Activated">ADCR Door Loop Open (ERR-DOOR-01)</option>
+                  <option value="Parking Brake Manual Underframe Release">Parking Brake Stuck (ERR-PB-02)</option>
+                  <option value="Pantograph 1 ADD Burst - Switched to Panto 2">Pantograph / VCB Failure (ERR-HV-01)</option>
+                  <option value="Air Spring Deflated - Cock Isolated (Vmax 60)">Air Spring Deflation (ERR-SUSP-01)</option>
+                  <option value="Traction Motor Converter Unit Software Isolated">Propulsion / TM Overtemp (ERR-PROP-03)</option>
+                  <option value="FDS Lavatory False Smoke Alarm Reset">Fire Detection Alarm (ERR-FIRE-01)</option>
+                  <option value="TCMS Complete Reboot via BN Switch 60s">TCMS Freeze / BN Reset (ERR-TCMS-05)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-[var(--muted-foreground,#94a3b8)] mb-1">Speed Restriction Applied ($V_{max}$)</label>
+                <select id="rep-speed" class="w-full bg-[var(--background,#0f172a)] border border-[var(--card-border,#334155)] rounded p-2 text-[var(--foreground,#f8fafc)] focus:outline-none">
+                  <option value="Normal Permissible Speed (No restriction)">Normal Permissible Speed</option>
+                  <option value="130 km/h (1 Bogie / 1 Motor Coach Isolated)">130 km/h (1 Bogie / 1 MC Isolated)</option>
+                  <option value="110 km/h (2 Bogie Brakes Isolated)">110 km/h (2 Bogie Brakes Isolated)</option>
+                  <option value="60 km/h STRICT (Air Spring Deflated on Bump Stop)">60 km/h STRICT (Air Spring Deflated)</option>
+                  <option value="90 km/h (Multiple Subsystems Degraded)">90 km/h (Degraded Operation)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-[var(--muted-foreground,#94a3b8)] mb-1">Action Summary / SOP Log</label>
+                <textarea id="rep-action-notes" rows="3" class="w-full bg-[var(--background,#0f172a)] border border-[var(--card-border,#334155)] rounded p-2 text-[var(--foreground,#f8fafc)] focus:outline-none">Inspected coach underframe. Found brake pads rubbing. Isolated Bogie 1 BIC cock and pulled distributor valve manual release ring. Verified BC pressure 0 kg/cm2 and pad clearance >2mm. Resumed with 130 km/h speed restriction.</textarea>
+              </div>
+
+              <button type="button" id="update-preview-btn" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded transition-colors shadow">
+                Update Report Card Preview ➔
+              </button>
+            </form>
+          </div>
+
+          <!-- Preview & Print Area (7 cols) -->
+          <div class="lg:col-span-7 bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-xl p-5 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-[var(--card-border,#334155)]">
+              <div>
+                <h3 class="text-sm font-bold text-[var(--foreground,#f8fafc)]">Official Record Card Preview</h3>
+                <p class="text-[11px] text-[var(--muted-foreground,#94a3b8)]">Format: IR-CAMTECH VB/EN-ROUTE/LOG-01</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button id="copy-report-btn" class="px-3 py-1.5 bg-[var(--border,#334155)] hover:bg-blue-600 hover:text-white rounded text-xs transition-colors">
+                  📋 Copy Text
+                </button>
+                <button id="print-report-btn" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-medium transition-colors shadow">
+                  🖨️ Print Card
+                </button>
+              </div>
+            </div>
+
+            <div id="report-card-view" class="p-5 bg-[var(--background,#0f172a)] border border-[var(--card-border,#334155)] rounded-lg font-mono text-xs space-y-3">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- Application Logic -->
+  <script>
+    // Pre-loaded Official Manual Database
+    const manualDatabase = [
+  {
+    "id": "fault-12803",
+    "code": "12803",
+    "ddu_code": "Code 12803 (Sec 2.534)",
+    "category": "Doors & Access Interlocks",
+    "title": "ADCR Feedback detected open. To continue the traction Acknowledge this fault, Operate ADCR bypass switch and ensure that all Doors are closed",
+    "symptom": "ADCR Feedback detected open. To continue the traction Acknowledge this fault, Operate ADCR bypass switch and ensure that all Doors are closed. Reported at DTC-CRW, ECC for- MC, TC, NDTC, MC2. Ref: SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1348 for DTC, ED 1349 for MC, ED 1350 for TC, ED 1351&1352 for NDTC1 & NDTC2, ED 1353 for MC2.",
+    "page_reference": "Vol-1 p. 279 (Sec 2.534)",
+    "page": 279,
+    "sec_ref": "2.534",
+    "chapter": "Chapter 2: TCMS Faults",
+    "safety_speed_restriction": "1 Motor Coach isolated: Vmax 130 km/h; 2 Motor Coaches isolated: Vmax 110 km/h; 3+ isolated: Vmax 90 km/h.",
+    "locations": [
+      "DTC-CRW",
+      "ECC for- MC",
+      "TC",
+      "NDTC",
+      "MC2"
+    ],
+    "location": "DTC-CRW, ECC for- MC, TC, NDTC, MC2",
+    "functional_group": "Group 5 (Door control) / Sub Functional group-1 (Coach door control)",
+    "schematic": "SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1348 for DTC, ED 1349 for MC, ED 1350 for TC, ED 1351&1352 for NDTC1 & NDTC2, ED 1353 for MC2",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 5 (Door control) / Sub Functional group-1 (Coach door control))",
+      "Physical hardware or pneumatic condition in DTC-CRW, ECC for- MC, TC, NDTC, MC2",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "1. Physically verify all doors are closed or not.",
+      "2. If all the doors are in closed condition, Check all LDSLR, LDSRR relay input status in corresponding control units on DDU, Inputs should be high.",
+      "3. If any relay input is low, in particular panel Check the voltage across contactor coil, It should be High & ensure relay/contactor is energized.",
+      "4. If relay/contactor is not energized, check by replacing with any other working one. It should be energized.",
+      "5. If supply itself is not available, then check the doors wiring.",
+      "6. If all LDSLR, LDSRR wiring are OK, Check DPR Left and DPR right Status in DMC, Inputs should be high.",
+      "7. If any relay input is low, check the relay energisation status.",
+      "8. Check the voltage across contactor coil, It should be High & ensure relay/contactor is energized.",
+      "9. If relay/contactor is not energized, check by replacing with any other working one. It should be energized.",
+      "10. If supply itself is not available, then check the door proving loop status wiring.",
+      "11. If still problem persists check the relay/contactor feed back Input on corresponding DIP card. It should be high.",
+      "12. If not, check by replacing with any other healthy DIP card and status should be high.",
+      "13. If Still problem persists check the DIP wiring."
+    ],
+    "checks": [
+      "1. Physically verify all doors are closed or not.",
+      "2. If all the doors are in closed condition, Check all LDSLR, LDSRR relay input status in corresponding control units on DDU, Inputs should be high.",
+      "3. If any relay input is low, in particular panel Check the voltage across contactor coil, It should be High & ensure relay/contactor is energized.",
+      "4. If relay/contactor is not energized, check by replacing with any other working one. It should be energized.",
+      "5. If supply itself is not available, then check the doors wiring.",
+      "6. If all LDSLR, LDSRR wiring are OK, Check DPR Left and DPR right Status in DMC, Inputs should be high.",
+      "7. If any relay input is low, check the relay energisation status.",
+      "8. Check the voltage across contactor coil, It should be High & ensure relay/contactor is energized.",
+      "9. If relay/contactor is not energized, check by replacing with any other working one. It should be energized.",
+      "10. If supply itself is not available, then check the door proving loop status wiring.",
+      "11. If still problem persists check the relay/contactor feed back Input on corresponding DIP card. It should be high.",
+      "12. If not, check by replacing with any other healthy DIP card and status should be high.",
+      "13. If Still problem persists check the DIP wiring."
+    ]
+  },
+  {
+    "id": "fault-12350",
+    "code": "12350",
+    "ddu_code": "Code 12350 (Sec 2.518)",
+    "category": "Doors & Access Interlocks",
+    "title": "All Door Not Closed",
+    "symptom": "All Door Not Closed. Reported at DTC, MC, TC, NDTC, MC2. Ref: SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1348 for DTC, ED 1349 for MC, ED 1350 for TC, ED 1351&1352 for NDTC1 & NDTC2, ED 1353 for MC2.",
+    "page_reference": "Vol-1 p. 271 (Sec 2.518)",
+    "page": 271,
+    "sec_ref": "2.518",
+    "chapter": "Chapter 2: TCMS Faults",
+    "safety_speed_restriction": "Normal track speed if verified physically locked; 60 km/h if door open en-route (emergency halt required).",
+    "locations": [
+      "DTC",
+      "MC",
+      "TC",
+      "NDTC",
+      "MC2"
+    ],
+    "location": "DTC, MC, TC, NDTC, MC2",
+    "functional_group": "Group 5 (Door control) / Sub Functional group-1",
+    "schematic": "SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1348 for DTC, ED 1349 for MC, ED 1350 for TC, ED 1351&1352 for NDTC1 & NDTC2, ED 1353 for MC2",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 5 (Door control) / Sub Functional group-1)",
+      "Physical hardware or pneumatic condition in DTC, MC, TC, NDTC, MC2",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "1. Physically verify all doors are closed or not.",
+      "2. If all the doors are in closed condition, check all LDSLR, LDSRR relay input status in corresponding control units on DDU, Inputs should be high.",
+      "3. If any relay input is low, in particular panel check the voltage across contactor coil, It should be high and ensure relay/contactor is energized.",
+      "4. If relay/contactor is not energized, check by replacing with any other working one. It should be energized.",
+      "5. If supply itself is not available, then check the doors wiring.",
+      "6. If all LDSLR, LDSRR wiring are ok, check ADCR status in DTC, input should be high.",
+      "7. If relay input is low, check the relay energisation status.",
+      "8. Check the voltage across contactor coil, it shall be high and ensure relay/contactor is energized."
+    ],
+    "checks": [
+      "1. Physically verify all doors are closed or not.",
+      "2. If all the doors are in closed condition, check all LDSLR, LDSRR relay input status in corresponding control units on DDU, Inputs should be high.",
+      "3. If any relay input is low, in particular panel check the voltage across contactor coil, It should be high and ensure relay/contactor is energized.",
+      "4. If relay/contactor is not energized, check by replacing with any other working one. It should be energized.",
+      "5. If supply itself is not available, then check the doors wiring.",
+      "6. If all LDSLR, LDSRR wiring are ok, check ADCR status in DTC, input should be high.",
+      "7. If relay input is low, check the relay energisation status.",
+      "8. Check the voltage across contactor coil, it shall be high and ensure relay/contactor is energized."
+    ]
+  },
+  {
+    "id": "fault-13384",
+    "code": "13384",
+    "ddu_code": "Code 13384 (Sec 2.744)",
+    "category": "Doors & Access Interlocks",
+    "title": "ADCR HW Bypass ON",
+    "symptom": "ADCR HW Bypass ON. Reported at DTC. Ref: SCHEMATIC DIAGRAM FOR MAE675UV2 ED 1348 for DTC.",
+    "page_reference": "Vol-1 p. 384 (Sec 2.744)",
+    "page": 384,
+    "sec_ref": "2.744",
+    "chapter": "Chapter 2: TCMS Faults",
+    "safety_speed_restriction": "Normal track speed if verified physically locked; 60 km/h if door open en-route (emergency halt required).",
+    "locations": [
+      "DTC"
+    ],
+    "location": "DTC",
+    "functional_group": "Group 2 (Drive & Brake Control) / Sub Functional group-2",
+    "schematic": "SCHEMATIC DIAGRAM FOR MAE675UV2 ED 1348 for DTC",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 2 (Drive & Brake Control) / Sub Functional group-2)",
+      "Physical hardware or pneumatic condition in DTC",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "Informative message. ADCR Hardware bypassed in following conditions:",
+      "1. Inputs mismatch with hardware and software.",
+      "2. ADCR relay failed condition.",
+      "3. DPL, DPR relay failed condition."
+    ],
+    "checks": [
+      "Informative message. ADCR Hardware bypassed in following conditions:",
+      "1. Inputs mismatch with hardware and software.",
+      "2. ADCR relay failed condition.",
+      "3. DPL, DPR relay failed condition."
+    ]
+  },
+  {
+    "id": "fault-1530---5626",
+    "code": "1530 / 5626",
+    "ddu_code": "Code 1530 / 5626 (Sec 2.414)",
+    "category": "Braking System",
+    "title": "EP Bg1 BIC Iso (Bogie 1 Brake Isolating Cock Isolated)",
+    "symptom": "EP Bg1 BIC Iso (Bogie 1 Brake Isolating Cock Isolated). Reported at DTC-CRW, MC-ECC, TC-ECC, NDTC-ECC. Ref: SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1348 for DTC, ED 1349 for MC, ED 1350 for TC, ED 1351&1352 for NDTC1 & NDTC2.",
+    "page_reference": "Vol-1 p. 219 (Sec 2.414)",
+    "page": 219,
+    "sec_ref": "2.414",
+    "chapter": "Chapter 2: TCMS Faults",
+    "safety_speed_restriction": "PROPORTIONAL MATRIX: 16-Car Rake: 1 Bogie isolated = 155 km/h, 2 Bogies isolated = 150 km/h, 3 Bogies = 145 km/h, 4 Bogies = 140 km/h. 8-Car Rake: 1 Bogie isolated = 150 km/h, 2 Bogies isolated = 140 km/h, 3 Bogies = 120 km/h, 4 Bogies = 90 km/h.",
+    "locations": [
+      "DTC-CRW",
+      "MC-ECC",
+      "TC-ECC",
+      "NDTC-ECC"
+    ],
+    "location": "DTC-CRW, MC-ECC, TC-ECC, NDTC-ECC",
+    "functional_group": "Group 7 (Pneumatic control) / Sub Functional group-3 (Brake control)",
+    "schematic": "SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1348 for DTC, ED 1349 for MC, ED 1350 for TC, ED 1351&1352 for NDTC1 & NDTC2",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 7 (Pneumatic control) / Sub Functional group-3 (Brake control))",
+      "Physical hardware or pneumatic condition in DTC-CRW, MC-ECC, TC-ECC, NDTC-ECC",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "1. Check the isolation cock, it shall be in open position.",
+      "2. If not, check the DIP wiring from isolation cock to DIP card, DIP shall be low.",
+      "3. If still problem persists, replace the DIP card with healthy card."
+    ],
+    "checks": [
+      "1. Check the isolation cock, it shall be in open position.",
+      "2. If not, check the DIP wiring from isolation cock to DIP card, DIP shall be low.",
+      "3. If still problem persists, replace the DIP card with healthy card."
+    ]
+  },
+  {
+    "id": "fault-1531---5627",
+    "code": "1531 / 5627",
+    "ddu_code": "Code 1531 / 5627 (Sec 2.415)",
+    "category": "Braking System",
+    "title": "EP Bg2 BIC Iso (Bogie 2 Brake Isolating Cock Isolated)",
+    "symptom": "EP Bg2 BIC Iso (Bogie 2 Brake Isolating Cock Isolated). Reported at DTC-CRW, MC-ECC, TC-ECC, NDTC-ECC. Ref: SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1348 for DTC, ED 1349 for MC, ED 1350 for TC, ED 1351&1352 for NDTC1 & NDTC2.",
+    "page_reference": "Vol-1 p. 219 (Sec 2.415)",
+    "page": 219,
+    "sec_ref": "2.415",
+    "chapter": "Chapter 2: TCMS Faults",
+    "safety_speed_restriction": "PROPORTIONAL MATRIX: 16-Car Rake: 1 Bogie isolated = 155 km/h, 2 Bogies isolated = 150 km/h, 3 Bogies = 145 km/h, 4 Bogies = 140 km/h. 8-Car Rake: 1 Bogie isolated = 150 km/h, 2 Bogies isolated = 140 km/h, 3 Bogies = 120 km/h, 4 Bogies = 90 km/h.",
+    "locations": [
+      "DTC-CRW",
+      "MC-ECC",
+      "TC-ECC",
+      "NDTC-ECC"
+    ],
+    "location": "DTC-CRW, MC-ECC, TC-ECC, NDTC-ECC",
+    "functional_group": "Group 7 (Pneumatic control) / Sub Functional group-3",
+    "schematic": "SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1348 for DTC, ED 1349 for MC, ED 1350 for TC, ED 1351&1352 for NDTC1 & NDTC2",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 7 (Pneumatic control) / Sub Functional group-3)",
+      "Physical hardware or pneumatic condition in DTC-CRW, MC-ECC, TC-ECC, NDTC-ECC",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "1. Check the isolation cock, it shall be in open position.",
+      "2. If not, check the DIP wiring from isolation cock to DIP card, DIP shall be low.",
+      "3. If still problem persists, replace the DIP card with healthy card."
+    ],
+    "checks": [
+      "1. Check the isolation cock, it shall be in open position.",
+      "2. If not, check the DIP wiring from isolation cock to DIP card, DIP shall be low.",
+      "3. If still problem persists, replace the DIP card with healthy card."
+    ]
+  },
+  {
+    "id": "fault-597---4693",
+    "code": "597 / 4693",
+    "ddu_code": "Code 597 / 4693 (Sec 2.96)",
+    "category": "Braking System",
+    "title": "EP stuck Brake Detected in Coach",
+    "symptom": "EP stuck Brake Detected in Coach. Reported at UNDERSLUNG. Ref: SCHEMATIC DIAGRAM FOR MAE675UV2 ED 1348 FOR DTC, ED 1349 for MC1, ED 1353 FOR MC2, ED 1350 for TC, ED 1351 FOR NDTC1, ED 1352 FOR NDTC2.",
+    "page_reference": "Vol-1 p. 58 (Sec 2.96)",
+    "page": 58,
+    "sec_ref": "2.96",
+    "chapter": "Chapter 2: TCMS Faults",
+    "safety_speed_restriction": "PROPORTIONAL MATRIX: 16-Car Rake: 1 Bogie isolated = 155 km/h, 2 Bogies isolated = 150 km/h, 3 Bogies = 145 km/h, 4 Bogies = 140 km/h. 8-Car Rake: 1 Bogie isolated = 150 km/h, 2 Bogies isolated = 140 km/h, 3 Bogies = 120 km/h, 4 Bogies = 90 km/h.",
+    "locations": [
+      "UNDERSLUNG"
+    ],
+    "location": "UNDERSLUNG",
+    "functional_group": "Group 7 (Pneumatic control) / Sub Functional group-2",
+    "schematic": "SCHEMATIC DIAGRAM FOR MAE675UV2 ED 1348 FOR DTC, ED 1349 for MC1, ED 1353 FOR MC2, ED 1350 for TC, ED 1351 FOR NDTC1, ED 1352 FOR NDTC2",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 7 (Pneumatic control) / Sub Functional group-2)",
+      "Physical hardware or pneumatic condition in UNDERSLUNG",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "1. Check the EP UNIT Functionality through master controller (braking, EB mode) & Auto brake handle.",
+      "2. If Functionality is not normal then inform Maintenance staff for EP UNIT calibration.",
+      "3. Check the outputs on Corresponding Control Unit.",
+      "4. If the outputs are abnormal then replace DOP Card with Healthy DOP Card.",
+      "5. If still problem persists, check the corresponding DOP wiring."
+    ],
+    "checks": [
+      "1. Check the EP UNIT Functionality through master controller (braking, EB mode) & Auto brake handle.",
+      "2. If Functionality is not normal then inform Maintenance staff for EP UNIT calibration.",
+      "3. Check the outputs on Corresponding Control Unit.",
+      "4. If the outputs are abnormal then replace DOP Card with Healthy DOP Card.",
+      "5. If still problem persists, check the corresponding DOP wiring."
+    ]
+  },
+  {
+    "id": "fault-12352",
+    "code": "12352",
+    "ddu_code": "Code 12352 (Sec 2.519)",
+    "category": "Braking System",
+    "title": "EP Stuck Brake Detected in rake through BC presser switch",
+    "symptom": "EP Stuck Brake Detected in rake through BC presser switch. Reported at DTC, MC, TC, NDTC, MC2. Ref: SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1348 for DTC, ED 1349 for MC, ED 1350 for TC, ED 1351&1352 for NDTC1 & NDTC2, ED 1353 for MC2.",
+    "page_reference": "Vol-1 p. 271 (Sec 2.519)",
+    "page": 271,
+    "sec_ref": "2.519",
+    "chapter": "Chapter 2: TCMS Faults",
+    "safety_speed_restriction": "PROPORTIONAL MATRIX: 16-Car Rake: 1 Bogie isolated = 155 km/h, 2 Bogies isolated = 150 km/h, 3 Bogies = 145 km/h, 4 Bogies = 140 km/h. 8-Car Rake: 1 Bogie isolated = 150 km/h, 2 Bogies isolated = 140 km/h, 3 Bogies = 120 km/h, 4 Bogies = 90 km/h.",
+    "locations": [
+      "DTC",
+      "MC",
+      "TC",
+      "NDTC",
+      "MC2"
+    ],
+    "location": "DTC, MC, TC, NDTC, MC2",
+    "functional_group": "Group 7 (Pneumatic control) / Sub Functional group-3",
+    "schematic": "SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1348 for DTC, ED 1349 for MC, ED 1350 for TC, ED 1351&1352 for NDTC1 & NDTC2, ED 1353 for MC2",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 7 (Pneumatic control) / Sub Functional group-3)",
+      "Physical hardware or pneumatic condition in DTC, MC, TC, NDTC, MC2",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "1. Check the BC pressure in DDU.",
+      "2. Check that any cock in isolation condition.",
+      "3. BC pressure in all coaches is Zero, if not check the corresponding coach BC pressure switch.",
+      "4. Check the LED status of corresponding DIP card (it should be LOW when pressure is Zero).",
+      "5. If still problem persists check the wiring."
+    ],
+    "checks": [
+      "1. Check the BC pressure in DDU.",
+      "2. Check that any cock in isolation condition.",
+      "3. BC pressure in all coaches is Zero, if not check the corresponding coach BC pressure switch.",
+      "4. Check the LED status of corresponding DIP card (it should be LOW when pressure is Zero).",
+      "5. If still problem persists check the wiring."
+    ]
+  },
+  {
+    "id": "fault-543---4639",
+    "code": "543 / 4639",
+    "ddu_code": "Code 543 / 4639 (Sec 2.58)",
+    "category": "Braking System",
+    "title": "PB Release Failed (Parking Brake Release Failed)",
+    "symptom": "PB Release Failed (Parking Brake Release Failed). Reported at DTC-CRW, MC-ECC, TC-ECC, NDTC-ECC. Ref: SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1348 for DTC, ED 1349 for MC, ED 1350 for TC, ED 1351&1352 for NDTC1 & NDTC2.",
+    "page_reference": "Vol-1 p. 39 (Sec 2.58)",
+    "page": 39,
+    "sec_ref": "2.58",
+    "chapter": "Chapter 2: TCMS Faults",
+    "safety_speed_restriction": "1 Bogie isolated: Vmax 130 km/h; 2 Bogies isolated: Vmax 110 km/h; 3+ Bogies isolated: Vmax 90 km/h.",
+    "locations": [
+      "DTC-CRW",
+      "MC-ECC",
+      "TC-ECC",
+      "NDTC-ECC"
+    ],
+    "location": "DTC-CRW, MC-ECC, TC-ECC, NDTC-ECC",
+    "functional_group": "Group 7 (Pneumatic control) / Sub Functional group-2 (Parking Brake control)",
+    "schematic": "SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1348 for DTC, ED 1349 for MC, ED 1350 for TC, ED 1351&1352 for NDTC1 & NDTC2",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 7 (Pneumatic control) / Sub Functional group-2 (Parking Brake control))",
+      "Physical hardware or pneumatic condition in DTC-CRW, MC-ECC, TC-ECC, NDTC-ECC",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "1. Ensure PB MCB should be in ON condition in the respective coaches.",
+      "2. Ensure PB TL supply, PB supply MCB are ON, any one of the cab shall be in occupied mode and PB Release switch operate for 1 sec.",
+      "3. Ensure MR shall be available (minimum of 5 bar).",
+      "4. If fault is logged in all coaches, then check PB release switch wiring to CCC unit.",
+      "5. If fault is logged in any particular coach, then in corresponding coach if DOP is low, replace the DOP card. If not, check the wiring of PB release valve.",
+      "6. If PB release valve is stuck due to any of the reason then inform to maintenance staff.",
+      "7. If PB release valve is OK, check PB Pressure SW feedbacks, If feedbacks are not OK, replace the pressure switch.",
+      "8. If pressure switch is OK, verify the inputs: PB applied HRFB input shall be low and PB PR OK PRSW input shall be high. If not then check wiring up to DIP card.",
+      "9. If wiring is OK, replace the DIP card."
+    ],
+    "checks": [
+      "1. Ensure PB MCB should be in ON condition in the respective coaches.",
+      "2. Ensure PB TL supply, PB supply MCB are ON, any one of the cab shall be in occupied mode and PB Release switch operate for 1 sec.",
+      "3. Ensure MR shall be available (minimum of 5 bar).",
+      "4. If fault is logged in all coaches, then check PB release switch wiring to CCC unit.",
+      "5. If fault is logged in any particular coach, then in corresponding coach if DOP is low, replace the DOP card. If not, check the wiring of PB release valve.",
+      "6. If PB release valve is stuck due to any of the reason then inform to maintenance staff.",
+      "7. If PB release valve is OK, check PB Pressure SW feedbacks, If feedbacks are not OK, replace the pressure switch.",
+      "8. If pressure switch is OK, verify the inputs: PB applied HRFB input shall be low and PB PR OK PRSW input shall be high. If not then check wiring up to DIP card.",
+      "9. If wiring is OK, replace the DIP card."
+    ]
+  },
+  {
+    "id": "fault-15---12338",
+    "code": "15 / 12338",
+    "ddu_code": "Code 15 / 12338 (Sec 2.15 / 2.507)",
+    "category": "Braking System",
+    "title": "Parking Brake Applied in RDM / Atleast one parking brake applied in rake, traction prohibited",
+    "symptom": "Parking Brake Applied in RDM / Atleast one parking brake applied in rake, traction prohibited. Reported at ECC- TC/NDTC/MC / UNDER FRAME. Ref: SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1348 for DTC, ED 1349 for MC1, ED 1350 for TC, ED 1353 for MC2, ED 1351 & 1352 for NDTC1 & 2.",
+    "page_reference": "Vol-1 p. 18 (Sec 2.15 / 2.507)",
+    "page": 18,
+    "sec_ref": "2.15 / 2.507",
+    "chapter": "Chapter 2: TCMS Faults",
+    "safety_speed_restriction": "1 Motor Coach isolated: Vmax 130 km/h; 2 Motor Coaches isolated: Vmax 110 km/h; 3+ isolated: Vmax 90 km/h.",
+    "locations": [
+      "ECC- TC/NDTC/MC / UNDER FRAME"
+    ],
+    "location": "ECC- TC/NDTC/MC / UNDER FRAME",
+    "functional_group": "Group 7 (Pneumatic control) / Sub Functional group-2",
+    "schematic": "SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1348 for DTC, ED 1349 for MC1, ED 1350 for TC, ED 1353 for MC2, ED 1351 & 1352 for NDTC1 & 2",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 7 (Pneumatic control) / Sub Functional group-2)",
+      "Physical hardware or pneumatic condition in ECC- TC/NDTC/MC / UNDER FRAME",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "1. Check the pressure Sw input on control unit (Inputs Should be High).",
+      "2. Check the PB applied relay input on control unit (Inputs Should be Low).",
+      "3. Check DOP Status on control unit for PB apply valve.",
+      "4. If DOP is low then check the wiring of PB apply valve.",
+      "5. If PB apply valve is stuck due to any of the above reason then release PB manually.",
+      "6. Inform to maintenance staff."
+    ],
+    "checks": [
+      "1. Check the pressure Sw input on control unit (Inputs Should be High).",
+      "2. Check the PB applied relay input on control unit (Inputs Should be Low).",
+      "3. Check DOP Status on control unit for PB apply valve.",
+      "4. If DOP is low then check the wiring of PB apply valve.",
+      "5. If PB apply valve is stuck due to any of the above reason then release PB manually.",
+      "6. Inform to maintenance staff."
+    ]
+  },
+  {
+    "id": "fault-3---4099",
+    "code": "3 / 4099",
+    "ddu_code": "Code 3 / 4099 (Sec 2.3)",
+    "category": "Braking System",
+    "title": "EBL 1 Triggered (Emergency Brake Loop 1 Triggered)",
+    "symptom": "EBL 1 Triggered (Emergency Brake Loop 1 Triggered). Reported at DTC-CRW, ECC-MC1&2/ NDTC/TC. Ref: SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1348 for DTC, ED 1349 for MC1, ED 1350 for TC, ED 1353 for MC2, ED 1351 & 1352 for NDTC1 & 2.",
+    "page_reference": "Vol-1 p. 12 (Sec 2.3)",
+    "page": 12,
+    "sec_ref": "2.3",
+    "chapter": "Chapter 2: TCMS Faults",
+    "safety_speed_restriction": "1 Bogie isolated: Vmax 130 km/h; 2 Bogies isolated: Vmax 110 km/h; 3+ Bogies isolated: Vmax 90 km/h.",
+    "locations": [
+      "DTC-CRW",
+      "ECC-MC1&2/ NDTC/TC"
+    ],
+    "location": "DTC-CRW, ECC-MC1&2/ NDTC/TC",
+    "functional_group": "Group 9 (Safety loops) / Sub Functional group-2 (EBL)",
+    "schematic": "SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1348 for DTC, ED 1349 for MC1, ED 1350 for TC, ED 1353 for MC2, ED 1351 & 1352 for NDTC1 & 2",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 9 (Safety loops) / Sub Functional group-2 (EBL))",
+      "Physical hardware or pneumatic condition in DTC-CRW, ECC-MC1&2/ NDTC/TC",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "Check Whether EBL1 is triggered in all Coaches. Then ensure below points. If exists only in Particular coach check points 7 to 12:",
+      "1. Ensure master controller handle is not in emergency brake position in occupied driver cab.",
+      "2. Ensure all emergency brake switches are in released condition in both driver cabs.",
+      "3. Ensure TPWS ISO Sw is in ISO Condition (if TPWS is not installed) in occupied cab.",
+      "4. Ensure TPWS ISO Sw is in ISO Condition (if TPWS is not installed) in non occupied cab.",
+      "5. Ensure emergency brake is not applied by TPWS (If TPWS installed) in occupied cab.",
+      "6. Ensure VCD is in inactive condition during zero speed (can be ensured through holding brake application).",
+      "7. Ensure none of the IV coupler is in open condition throughout the train (can be ensured through RDM test).",
+      "8. Ensure local EB1 coil is in energized condition; if not, check coil supply, replace coil with working relay coil, verify DIP in both cabs.",
+      "9. If supply itself is not available, check local EB1 relay coil supply wiring.",
+      "10. If EBL1 relay coil is not energized, check coil supply, replace coil, verify corresponding DIP.",
+      "11. If supply itself not available, check EBL1 relay coil supply wiring.",
+      "12. If problem still persists, check DIP wiring; if ok replace DIP card."
+    ],
+    "checks": [
+      "Check Whether EBL1 is triggered in all Coaches. Then ensure below points. If exists only in Particular coach check points 7 to 12:",
+      "1. Ensure master controller handle is not in emergency brake position in occupied driver cab.",
+      "2. Ensure all emergency brake switches are in released condition in both driver cabs.",
+      "3. Ensure TPWS ISO Sw is in ISO Condition (if TPWS is not installed) in occupied cab.",
+      "4. Ensure TPWS ISO Sw is in ISO Condition (if TPWS is not installed) in non occupied cab.",
+      "5. Ensure emergency brake is not applied by TPWS (If TPWS installed) in occupied cab.",
+      "6. Ensure VCD is in inactive condition during zero speed (can be ensured through holding brake application).",
+      "7. Ensure none of the IV coupler is in open condition throughout the train (can be ensured through RDM test).",
+      "8. Ensure local EB1 coil is in energized condition; if not, check coil supply, replace coil with working relay coil, verify DIP in both cabs.",
+      "9. If supply itself is not available, check local EB1 relay coil supply wiring.",
+      "10. If EBL1 relay coil is not energized, check coil supply, replace coil, verify corresponding DIP.",
+      "11. If supply itself not available, check EBL1 relay coil supply wiring.",
+      "12. If problem still persists, check DIP wiring; if ok replace DIP card."
+    ]
+  },
+  {
+    "id": "fault-4---4100",
+    "code": "4 / 4100",
+    "ddu_code": "Code 4 / 4100 (Sec 2.4)",
+    "category": "Braking System",
+    "title": "EBL 2 Triggered",
+    "symptom": "EBL 2 Triggered. Reported at DTC-CRW, ECC-MC1/MC2/NDTC/TC. Ref: SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1348 for DTC, ED 1349 for MC1, ED 1350 for TC, ED 1353 for MC2, ED 1351 & 1352 for NDTC1 & 2.",
+    "page_reference": "Vol-1 p. 12 (Sec 2.4)",
+    "page": 12,
+    "sec_ref": "2.4",
+    "chapter": "Chapter 2: TCMS Faults",
+    "safety_speed_restriction": "Observe caution: Verify status on DDU. Clear block section according to Section Controller / TLC orders.",
+    "locations": [
+      "DTC-CRW",
+      "ECC-MC1/MC2/NDTC/TC"
+    ],
+    "location": "DTC-CRW, ECC-MC1/MC2/NDTC/TC",
+    "functional_group": "Group 9 (Safety loops) / Sub Functional group-2",
+    "schematic": "SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1348 for DTC, ED 1349 for MC1, ED 1350 for TC, ED 1353 for MC2, ED 1351 & 1352 for NDTC1 & 2",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 9 (Safety loops) / Sub Functional group-2)",
+      "Physical hardware or pneumatic condition in DTC-CRW, ECC-MC1/MC2/NDTC/TC",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "Follow identical EBL verification procedure as EBL1 checking EB2 local coil, EBL2 relay coil supply, TPWS ISO Sw, IV coupler continuity, and DIP card."
+    ],
+    "checks": [
+      "Follow identical EBL verification procedure as EBL1 checking EB2 local coil, EBL2 relay coil supply, TPWS ISO Sw, IV coupler continuity, and DIP card."
+    ]
+  },
+  {
+    "id": "fault-9---12288",
+    "code": "9 / 12288",
+    "ddu_code": "Code 9 / 12288 (Sec 2.9 / 2.472)",
+    "category": "High Voltage & Pantograph",
+    "title": "EOL123 Triggered / EMY off Loop Triggered - All Panto - VCB Opened",
+    "symptom": "EOL123 Triggered / EMY off Loop Triggered - All Panto - VCB Opened. Reported at ECC- TC / DTC -CRW. Ref: SCHEMATIC DIAGRAM FOR MAE675UV2, ED1350 FOR TC / ED 1348 FOR DTC.",
+    "page_reference": "Vol-1 p. 15 (Sec 2.9 / 2.472)",
+    "page": 15,
+    "sec_ref": "2.9 / 2.472",
+    "chapter": "Chapter 2: TCMS Faults",
+    "safety_speed_restriction": "Normal track speed on alternate pantograph; 100 km/h on steep gradient with single basic unit.",
+    "locations": [
+      "ECC- TC / DTC -CRW"
+    ],
+    "location": "ECC- TC / DTC -CRW",
+    "functional_group": "Group 9 (Safety loops) / Sub Functional group-1 (EOL)",
+    "schematic": "SCHEMATIC DIAGRAM FOR MAE675UV2, ED1350 FOR TC / ED 1348 FOR DTC",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 9 (Safety loops) / Sub Functional group-1 (EOL))",
+      "Physical hardware or pneumatic condition in ECC- TC / DTC -CRW",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "1. Check emergency OFF switch in both DTC cabs.",
+      "2. Check EOL MCB in both cabs shall be in ON conditions.",
+      "3. Compare EOL1, EOL2, EOL3, EOL123 inputs relay feedback on DDU.",
+      "4. Ensure that none of the IV coupler is in open condition throughout the train (Ensure through RDM test Mode).",
+      "5. Check the TL wiring."
+    ],
+    "checks": [
+      "1. Check emergency OFF switch in both DTC cabs.",
+      "2. Check EOL MCB in both cabs shall be in ON conditions.",
+      "3. Compare EOL1, EOL2, EOL3, EOL123 inputs relay feedback on DDU.",
+      "4. Ensure that none of the IV coupler is in open condition throughout the train (Ensure through RDM test Mode).",
+      "5. Check the TL wiring."
+    ]
+  },
+  {
+    "id": "fault-623",
+    "code": "623",
+    "ddu_code": "Code 623 (Sec 2.121)",
+    "category": "High Voltage & Pantograph",
+    "title": "ADD Detected - Panto down triggered (Auto Drop Device)",
+    "symptom": "ADD Detected - Panto down triggered (Auto Drop Device). Reported at TC-ECC. Ref: SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1350 for TC.",
+    "page_reference": "Vol-1 p. 71 (Sec 2.121)",
+    "page": 71,
+    "sec_ref": "2.121",
+    "chapter": "Chapter 2: TCMS Faults",
+    "safety_speed_restriction": "Normal track speed on alternate pantograph; 100 km/h on steep gradient with single basic unit.",
+    "locations": [
+      "TC-ECC"
+    ],
+    "location": "TC-ECC",
+    "functional_group": "Group 1 (Panto & VCB Control) / Sub Functional group-1",
+    "schematic": "SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1350 for TC",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 1 (Panto & VCB Control) / Sub Functional group-1)",
+      "Physical hardware or pneumatic condition in TC-ECC",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "1. Ensure panto is UP, if not check AAC & MR pressure.",
+      "2. If pressures are OK, and panto is up, check for leakages.",
+      "3. If no leakages are there, then check the pressure switch and wiring upto DIP card.",
+      "4. If all are OK, check the Panto carbon plate."
+    ],
+    "checks": [
+      "1. Ensure panto is UP, if not check AAC & MR pressure.",
+      "2. If pressures are OK, and panto is up, check for leakages.",
+      "3. If no leakages are there, then check the pressure switch and wiring upto DIP card.",
+      "4. If all are OK, check the Panto carbon plate."
+    ]
+  },
+  {
+    "id": "fault-1071---624",
+    "code": "1071 / 624",
+    "ddu_code": "Code 1071 / 624 (Sec 2.268 / 2.122)",
+    "category": "High Voltage & Pantograph",
+    "title": "AAC Pressure Low / Panto Pressure Low Detected",
+    "symptom": "AAC Pressure Low / Panto Pressure Low Detected. Reported at TC -ECC, UNDER FRAME. Ref: SCHEMATIC DIAGRAM FOR MAE675UV2 ED 1350 for TC.",
+    "page_reference": "Vol-1 p. 145 (Sec 2.268 / 2.122)",
+    "page": 145,
+    "sec_ref": "2.268 / 2.122",
+    "chapter": "Chapter 2: TCMS Faults",
+    "safety_speed_restriction": "Normal track speed on alternate pantograph; 100 km/h on steep gradient with single basic unit.",
+    "locations": [
+      "TC -ECC",
+      "UNDER FRAME"
+    ],
+    "location": "TC -ECC, UNDER FRAME",
+    "functional_group": "Group 7 (Pneumatic control) / Sub Functional group-4 (AAC control)",
+    "schematic": "SCHEMATIC DIAGRAM FOR MAE675UV2 ED 1350 for TC",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 7 (Pneumatic control) / Sub Functional group-4 (AAC control))",
+      "Physical hardware or pneumatic condition in TC -ECC, UNDER FRAME",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "1. Check AAC in running condition and pressure is >6.3 bar.",
+      "2. If not, check for any leakage in AAC pressure.",
+      "3. If no leakage found check pressure switch stuck status and pressure switch input on EPCC Module.",
+      "4. If still problem persists, check wiring or replace Pressure SW.",
+      "5. In case of VCB close condition, 3-phase supply available case check valve b/w MR and AAC pressure pipe. MR should feed AAC in normal running condition through this valve."
+    ],
+    "checks": [
+      "1. Check AAC in running condition and pressure is >6.3 bar.",
+      "2. If not, check for any leakage in AAC pressure.",
+      "3. If no leakage found check pressure switch stuck status and pressure switch input on EPCC Module.",
+      "4. If still problem persists, check wiring or replace Pressure SW.",
+      "5. In case of VCB close condition, 3-phase supply available case check valve b/w MR and AAC pressure pipe. MR should feed AAC in normal running condition through this valve."
+    ]
+  },
+  {
+    "id": "fault-805---806---1568",
+    "code": "805 / 806 / 1568",
+    "ddu_code": "Code 805 / 806 / 1568 (Sec 2.188 / 2.189 / 2.427)",
+    "category": "High Voltage & Pantograph",
+    "title": "Roof VCB Stuck High / Stuck Low / VCB ON faulty lockout (Operation Not possible for 1 Hour)",
+    "symptom": "Roof VCB Stuck High / Stuck Low / VCB ON faulty lockout (Operation Not possible for 1 Hour). Reported at TC -ECC. Ref: SCHEMATIC DIAGRAM FOR MAE675UV2 ED 1350 for TC.",
+    "page_reference": "Vol-1 p. 105 (Sec 2.188 / 2.189 / 2.427)",
+    "page": 105,
+    "sec_ref": "2.188 / 2.189 / 2.427",
+    "chapter": "Chapter 2: TCMS Faults",
+    "safety_speed_restriction": "Normal track speed on alternate pantograph; 100 km/h on steep gradient with single basic unit.",
+    "locations": [
+      "TC -ECC"
+    ],
+    "location": "TC -ECC",
+    "functional_group": "Group 7 / Group 1 (Sub Functional group-4 / Sub Functional group-1)",
+    "schematic": "SCHEMATIC DIAGRAM FOR MAE675UV2 ED 1350 for TC",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 7 / Group 1 (Sub Functional group-4 / Sub Functional group-1))",
+      "Physical hardware or pneumatic condition in TC -ECC",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "1. Ensure PANTO&VCB Supply MCB is in ON condition, EOL123 RELAY coil must be in pick up condition & AAC Pressure is in healthy range (above 5.3 bar).",
+      "2. Give VCB ON command and check DOP card LEDs status by replacing with healthy card (shall be ON).",
+      "3. Check wiring from TB to relay coil.",
+      "4. Check VCB FB NO & VCB FB NC input on DIP card (In VCB close: NO is High, NC is Low; reverse in open).",
+      "5. Check VCB feedback inputs on main & redundant DIP card.",
+      "Note: The fault will lockout when logged more than 3 times in an hour. For lockout recovery, DDU Critical Reset command is required."
+    ],
+    "checks": [
+      "1. Ensure PANTO&VCB Supply MCB is in ON condition, EOL123 RELAY coil must be in pick up condition & AAC Pressure is in healthy range (above 5.3 bar).",
+      "2. Give VCB ON command and check DOP card LEDs status by replacing with healthy card (shall be ON).",
+      "3. Check wiring from TB to relay coil.",
+      "4. Check VCB FB NO & VCB FB NC input on DIP card (In VCB close: NO is High, NC is Low; reverse in open).",
+      "5. Check VCB feedback inputs on main & redundant DIP card.",
+      "Note: The fault will lockout when logged more than 3 times in an hour. For lockout recovery, DDU Critical Reset command is required."
+    ]
+  },
+  {
+    "id": "fault-560---561---562---563",
+    "code": "560 / 561 / 562 / 563",
+    "ddu_code": "Code 560 / 561 / 562 / 563 (Sec 2.72 / 2.73 / 2.74 / 2.75)",
+    "category": "Suspension & Bogie",
+    "title": "Broken Suspension in Bellow 1 / 2 / 3 / 4",
+    "symptom": "Broken Suspension in Bellow 1 / 2 / 3 / 4. Reported at DTC-CRW, MC-ECC, TC-ECC, NDTC-ECC. Ref: SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1348 for DTC, ED 1349 for MC, ED 1350 for TC, ED 1351&1352 for NDTC1 & NDTC2.",
+    "page_reference": "Vol-1 p. 46 (Sec 2.72 / 2.73 / 2.74 / 2.75)",
+    "page": 46,
+    "sec_ref": "2.72 / 2.73 / 2.74 / 2.75",
+    "chapter": "Chapter 2: TCMS Faults",
+    "safety_speed_restriction": "MANDATORY: 60 km/h strictly when running on emergency rubber bump stop upon air spring deflation.",
+    "locations": [
+      "DTC-CRW",
+      "MC-ECC",
+      "TC-ECC",
+      "NDTC-ECC"
+    ],
+    "location": "DTC-CRW, MC-ECC, TC-ECC, NDTC-ECC",
+    "functional_group": "Group 2 (Drive & Brake Control) / Sub Functional group-3 (Sensor interface)",
+    "schematic": "SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1348 for DTC, ED 1349 for MC, ED 1350 for TC, ED 1351&1352 for NDTC1 & NDTC2",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 2 (Drive & Brake Control) / Sub Functional group-3 (Sensor interface))",
+      "Physical hardware or pneumatic condition in DTC-CRW, MC-ECC, TC-ECC, NDTC-ECC",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "1. Check the bellow physically. If punctured, inform to maintenance staff (Speed limited to 60 km/h).",
+      "2. If bellow is not punctured, verify the isolating valves of air suspension.",
+      "3. If valve is OK, replace AFIP/DIP card with healthy card.",
+      "4. Still if problem persists, replace load sensor with healthy sensor."
+    ],
+    "checks": [
+      "1. Check the bellow physically. If punctured, inform to maintenance staff (Speed limited to 60 km/h).",
+      "2. If bellow is not punctured, verify the isolating valves of air suspension.",
+      "3. If valve is OK, replace AFIP/DIP card with healthy card.",
+      "4. Still if problem persists, replace load sensor with healthy sensor."
+    ]
+  },
+  {
+    "id": "fault-1057---1058---1060---1061",
+    "code": "1057 / 1058 / 1060 / 1061",
+    "ddu_code": "Code 1057 / 1058 / 1060 / 1061 (Sec 2.256 / 2.257 / 2.259 / 2.260)",
+    "category": "Suspension & Bogie",
+    "title": "Air Suspension Pressure Switch Left/Right / Air Suspension Isolation Cock Left/Right Opened",
+    "symptom": "Air Suspension Pressure Switch Left/Right / Air Suspension Isolation Cock Left/Right Opened. Reported at DTC-CRW, MC-ECC, TC-ECC, NDTC-ECC. Ref: SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1348 for DTC, ED 1349 for MC, ED 1350 for TC, ED 1351&1352 for NDTC1 & NDTC2.",
+    "page_reference": "Vol-1 p. 139 (Sec 2.256 / 2.257 / 2.259 / 2.260)",
+    "page": 139,
+    "sec_ref": "2.256 / 2.257 / 2.259 / 2.260",
+    "chapter": "Chapter 2: TCMS Faults",
+    "safety_speed_restriction": "MANDATORY: 60 km/h strictly when running on emergency rubber bump stop upon air spring deflation.",
+    "locations": [
+      "DTC-CRW",
+      "MC-ECC",
+      "TC-ECC",
+      "NDTC-ECC"
+    ],
+    "location": "DTC-CRW, MC-ECC, TC-ECC, NDTC-ECC",
+    "functional_group": "Group 7 (Pneumatic control) / Sub Functional group-3",
+    "schematic": "SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1348 for DTC, ED 1349 for MC, ED 1350 for TC, ED 1351&1352 for NDTC1 & NDTC2",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 7 (Pneumatic control) / Sub Functional group-3)",
+      "Physical hardware or pneumatic condition in DTC-CRW, MC-ECC, TC-ECC, NDTC-ECC",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "1. Check the isolation cock, it shall be in open position.",
+      "2. If not check the DIP wiring from isolation cock to DIP card, DIP shall be low.",
+      "3. If still problem persists, replace the DIP card with healthy card."
+    ],
+    "checks": [
+      "1. Check the isolation cock, it shall be in open position.",
+      "2. If not check the DIP wiring from isolation cock to DIP card, DIP shall be low.",
+      "3. If still problem persists, replace the DIP card with healthy card."
+    ]
+  },
+  {
+    "id": "fault-30---4126---31---4127",
+    "code": "30 / 4126 / 31 / 4127",
+    "ddu_code": "Code 30 / 4126 / 31 / 4127 (Sec 2.30 / 2.31)",
+    "category": "Fire Safety & HVAC",
+    "title": "Fire-1 Detected / Fire-2 Detected / Smoke Detected in Toilet / Panels",
+    "symptom": "Fire-1 Detected / Fire-2 Detected / Smoke Detected in Toilet / Panels. Reported at DTC-CRW, MC-ECC, TC-ECC, NDTC-ECC. Ref: SCHEMATIC DIAGRAM FOR MAE675UV2 ED 1348 FOR DTC, ED 1349 for MC1, ED 1353 FOR MC2, ED 1350 for TC, ED 1351 FOR NDTC1, ED 1352 FOR NDTC2.",
+    "page_reference": "Vol-1 p. 25 (Sec 2.30 / 2.31)",
+    "page": 25,
+    "sec_ref": "2.30 / 2.31",
+    "chapter": "Chapter 2: TCMS Faults",
+    "safety_speed_restriction": "Immediate emergency stop if genuine fire. Normal speed once verified false alarm and reset.",
+    "locations": [
+      "DTC-CRW",
+      "MC-ECC",
+      "TC-ECC",
+      "NDTC-ECC"
+    ],
+    "location": "DTC-CRW, MC-ECC, TC-ECC, NDTC-ECC",
+    "functional_group": "Group 9 (Safety loops) / Sub Functional group-6 (Fire detection system)",
+    "schematic": "SCHEMATIC DIAGRAM FOR MAE675UV2 ED 1348 FOR DTC, ED 1349 for MC1, ED 1353 FOR MC2, ED 1350 for TC, ED 1351 FOR NDTC1, ED 1352 FOR NDTC2",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 9 (Safety loops) / Sub Functional group-6 (Fire detection system))",
+      "Physical hardware or pneumatic condition in DTC-CRW, MC-ECC, TC-ECC, NDTC-ECC",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "1. Check fire/smoke condition in corresponding coach immediately.",
+      "2. If smoke/fire not occurred, still fault exists, replace sensor with healthy one.",
+      "3. Check inputs on Corresponding Control Unit.",
+      "4. If inputs abnormal, replace DIP Card with Healthy DIP Card.",
+      "5. If still problem persists, check corresponding DIP wiring."
+    ],
+    "checks": [
+      "1. Check fire/smoke condition in corresponding coach immediately.",
+      "2. If smoke/fire not occurred, still fault exists, replace sensor with healthy one.",
+      "3. Check inputs on Corresponding Control Unit.",
+      "4. If inputs abnormal, replace DIP Card with Healthy DIP Card.",
+      "5. If still problem persists, check corresponding DIP wiring."
+    ]
+  },
+  {
+    "id": "fault-24",
+    "code": "24",
+    "ddu_code": "Code 24 (Sec 2.24)",
+    "category": "Braking System",
+    "title": "Battery voltage less than 87V, Load Might be on Battery. Release Brakes using BIC Cock in all Coaches to avoid Brake Binding. Switch OFF PIS",
+    "symptom": "Battery voltage less than 87V, Load Might be on Battery. Release Brakes using BIC Cock in all Coaches to avoid Brake Binding. Switch OFF PIS. Reported at TC - UNDER FRAME. Ref: SCHEMATIC DIAGRAM FOR MAE675UV2, - ED 1350 for TC.",
+    "page_reference": "Vol-1 p. 22 (Sec 2.24)",
+    "page": 22,
+    "sec_ref": "2.24",
+    "chapter": "Chapter 2: TCMS Faults",
+    "safety_speed_restriction": "1 Bogie isolated: Vmax 130 km/h; 2 Bogies isolated: Vmax 110 km/h; 3+ Bogies isolated: Vmax 90 km/h.",
+    "locations": [
+      "TC - UNDER FRAME"
+    ],
+    "location": "TC - UNDER FRAME",
+    "functional_group": "Group 3 (Power) / Sub Functional group-1",
+    "schematic": "SCHEMATIC DIAGRAM FOR MAE675UV2, - ED 1350 for TC",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 3 (Power) / Sub Functional group-1)",
+      "Physical hardware or pneumatic condition in TC - UNDER FRAME",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "1. Check whether all AUX converters are working or not.",
+      "2. If ACU is not in working condition, Check any faults logged in ACU side, resolve and provide fault reset command from driver desk.",
+      "3. Check the battery voltage. If it is less than 87V, battery is heavily drained.",
+      "4. Check corresponding coach BN train line.",
+      "5. Release the brakes using BIC cock in all coaches to prevent en-route brake binding.",
+      "6. Switch OFF PIS to avoid further battery draining."
+    ],
+    "checks": [
+      "1. Check whether all AUX converters are working or not.",
+      "2. If ACU is not in working condition, Check any faults logged in ACU side, resolve and provide fault reset command from driver desk.",
+      "3. Check the battery voltage. If it is less than 87V, battery is heavily drained.",
+      "4. Check corresponding coach BN train line.",
+      "5. Release the brakes using BIC cock in all coaches to prevent en-route brake binding.",
+      "6. Switch OFF PIS to avoid further battery draining."
+    ]
+  },
+  {
+    "id": "fault-17051---17083",
+    "code": "17051 / 17083",
+    "ddu_code": "Code 17051 / 17083 (Sec 4.14 / 4.27)",
+    "category": "Propulsion & Traction",
+    "title": "Locked Axle Detected By TMC / Locked Axle Detected By TMC Lockout",
+    "symptom": "Locked Axle Detected By TMC / Locked Axle Detected By TMC Lockout. Reported at MC Coach. Ref: ED1349 FOR MC1, ED1353 FOR MC2.",
+    "page_reference": "Vol-1 p. 509 (Sec 4.14 / 4.27)",
+    "page": 509,
+    "sec_ref": "4.14 / 4.27",
+    "chapter": "Chapter 4: LTC Faults",
+    "safety_speed_restriction": "CRITICAL HALT: Do not move train if axle is locked. If false alarm confirmed, max 100 km/h to next depot.",
+    "locations": [
+      "MC Coach"
+    ],
+    "location": "MC Coach",
+    "functional_group": "Group 3 & Sub Functional Group 2",
+    "schematic": "ED1349 FOR MC1, ED1353 FOR MC2",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 3 & Sub Functional Group 2)",
+      "Physical hardware or pneumatic condition in MC Coach",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "1. Check physically whether the wheel is rotating when Traction is applied.",
+      "2. If wheel is not rotating even though train is in motion, fault declared is genuine (Locked Axle). Stop train.",
+      "3. If wheel is not locked and able to rotate freely, intimate Medha Staff.",
+      "4. Recovery of lockout fault will happen only after control power supply recycle of corresponding MTICC."
+    ],
+    "checks": [
+      "1. Check physically whether the wheel is rotating when Traction is applied.",
+      "2. If wheel is not rotating even though train is in motion, fault declared is genuine (Locked Axle). Stop train.",
+      "3. If wheel is not locked and able to rotate freely, intimate Medha Staff.",
+      "4. Recovery of lockout fault will happen only after control power supply recycle of corresponding MTICC."
+    ]
+  },
+  {
+    "id": "fault-17047---17079",
+    "code": "17047 / 17079",
+    "ddu_code": "Code 17047 / 17079 (Sec 4.12 / 4.23)",
+    "category": "Propulsion & Traction",
+    "title": "Pinion Slip Detected By TMC / Pinion Slip Detected By TMC Lockout",
+    "symptom": "Pinion Slip Detected By TMC / Pinion Slip Detected By TMC Lockout. Reported at MC Coach. Ref: ED1349 FOR MC1, ED1353 FOR MC2.",
+    "page_reference": "Vol-1 p. 508 (Sec 4.12 / 4.23)",
+    "page": 508,
+    "sec_ref": "4.12 / 4.23",
+    "chapter": "Chapter 4: LTC Faults",
+    "safety_speed_restriction": "Isolate defective inverter. 1 Motor Coach isolated: Vmax 130 km/h; 2 Motor Coaches isolated: Vmax 110 km/h.",
+    "locations": [
+      "MC Coach"
+    ],
+    "location": "MC Coach",
+    "functional_group": "Group 3 & Sub Functional Group 2",
+    "schematic": "ED1349 FOR MC1, ED1353 FOR MC2",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 3 & Sub Functional Group 2)",
+      "Physical hardware or pneumatic condition in MC Coach",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "1. Cut out all other inverters except the one which declared the fault. Keep inverter in active mode and apply 10 to 20% Torque.",
+      "2. As only one inverter is enabled, train cannot move easily. If motors coupled to this inverter show finite RPM with no train movement, Pinion Slip fault is genuine. Intimate Medha Staff.",
+      "3. If motor RPM shows zero, fault may not be genuine. Intimate Medha Staff.",
+      "4. Recovery of lockout happens after control power supply recycle of MTICC."
+    ],
+    "checks": [
+      "1. Cut out all other inverters except the one which declared the fault. Keep inverter in active mode and apply 10 to 20% Torque.",
+      "2. As only one inverter is enabled, train cannot move easily. If motors coupled to this inverter show finite RPM with no train movement, Pinion Slip fault is genuine. Intimate Medha Staff.",
+      "3. If motor RPM shows zero, fault may not be genuine. Intimate Medha Staff.",
+      "4. Recovery of lockout happens after control power supply recycle of MTICC."
+    ]
+  },
+  {
+    "id": "fault-16938---18986",
+    "code": "16938 / 18986",
+    "ddu_code": "Code 16938 / 18986 (Sec 4.6 / 4.46)",
+    "category": "Propulsion & Traction",
+    "title": "TM Stator Temperature Crossed Max Limit",
+    "symptom": "TM Stator Temperature Crossed Max Limit. Reported at MC Coach. Ref: ED1349 FOR MC1, ED1353 FOR MC2.",
+    "page_reference": "Vol-1 p. 505 (Sec 4.6 / 4.46)",
+    "page": 505,
+    "sec_ref": "4.6 / 4.46",
+    "chapter": "Chapter 4: LTC Faults",
+    "safety_speed_restriction": "1 Motor Coach isolated: Vmax 130 km/h; 2 Motor Coaches isolated: Vmax 110 km/h; 3+ isolated: Vmax 90 km/h.",
+    "locations": [
+      "MC Coach"
+    ],
+    "location": "MC Coach",
+    "functional_group": "Group 3 & Sub Functional Group 2",
+    "schematic": "ED1349 FOR MC1, ED1353 FOR MC2",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 3 & Sub Functional Group 2)",
+      "Physical hardware or pneumatic condition in MC Coach",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "1. Verify whether temperature of Traction Motor read by LTC/DDU is genuinely high by comparing with other TM temperature and manually checking condition of TM.",
+      "2. If temperature is really high, check for choked TM filter, wheel lock condition, or motor failure.",
+      "3. If motor is normal, check temperature sensor resistance at atmospheric temp (>100 ohms, 100 ohms at 0 degC PT100) or check MTICC card."
+    ],
+    "checks": [
+      "1. Verify whether temperature of Traction Motor read by LTC/DDU is genuinely high by comparing with other TM temperature and manually checking condition of TM.",
+      "2. If temperature is really high, check for choked TM filter, wheel lock condition, or motor failure.",
+      "3. If motor is normal, check temperature sensor resistance at atmospheric temp (>100 ohms, 100 ohms at 0 degC PT100) or check MTICC card."
+    ]
+  },
+  {
+    "id": "fault-10242---10370",
+    "code": "10242 / 10370",
+    "ddu_code": "Code 10242 / 10370 (Sec 3.3 / 3.66)",
+    "category": "Auxiliary Power (ACU)",
+    "title": "A1/A2 THREE PHASE OUTPUT L1 OVER CURRENT",
+    "symptom": "A1/A2 THREE PHASE OUTPUT L1 OVER CURRENT. Reported at ACU. Ref: SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1348 For DTC, ED 1350 for TC, ED 1351 for NDTC.",
+    "page_reference": "Vol-1 p. 431 (Sec 3.3 / 3.66)",
+    "page": 431,
+    "sec_ref": "3.3 / 3.66",
+    "chapter": "Chapter 3: Auxiliary Converter Faults",
+    "safety_speed_restriction": "Observe caution: Verify status on DDU. Clear block section according to Section Controller / TLC orders.",
+    "locations": [
+      "ACU"
+    ],
+    "location": "ACU",
+    "functional_group": "Group 3 (Power)",
+    "schematic": "SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1348 For DTC, ED 1350 for TC, ED 1351 for NDTC",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 3 (Power))",
+      "Physical hardware or pneumatic condition in ACU",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "1. Measure load current at 415 Vac load side. If more than rated current, check for partial short circuit or additional load beyond rating.",
+      "2. If current is less than rated current, check Hall effect sensors inside LC+Inverter module for damage or cable connection; if defective replace LC+Inverter module."
+    ],
+    "checks": [
+      "1. Measure load current at 415 Vac load side. If more than rated current, check for partial short circuit or additional load beyond rating.",
+      "2. If current is less than rated current, check Hall effect sensors inside LC+Inverter module for damage or cable connection; if defective replace LC+Inverter module."
+    ]
+  },
+  {
+    "id": "fault-10767---10895",
+    "code": "10767 / 10895",
+    "ddu_code": "Code 10767 / 10895 (Sec 3.1 / 3.64)",
+    "category": "Auxiliary Power (ACU)",
+    "title": "A1LC / A2LC INPUT UNDER VOLTAGE",
+    "symptom": "A1LC / A2LC INPUT UNDER VOLTAGE. Reported at ACU. Ref: SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1348 For DTC, ED 1350 for TC, ED 1351 for NDTC.",
+    "page_reference": "Vol-1 p. 430 (Sec 3.1 / 3.64)",
+    "page": 430,
+    "sec_ref": "3.1 / 3.64",
+    "chapter": "Chapter 3: Auxiliary Converter Faults",
+    "safety_speed_restriction": "Observe caution: Verify status on DDU. Clear block section according to Section Controller / TLC orders.",
+    "locations": [
+      "ACU"
+    ],
+    "location": "ACU",
+    "functional_group": "Group 3 (Power)",
+    "schematic": "SCHEMATIC DIAGRAM FOR MAE675UV2, ED 1348 For DTC, ED 1350 for TC, ED 1351 for NDTC",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 3 (Power))",
+      "Physical hardware or pneumatic condition in ACU",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "1. Check Transformer Primary & secondary voltages.",
+      "2. Check healthiness of input voltage sensors and feedback section; replace voltage sensor card if defective."
+    ],
+    "checks": [
+      "1. Check Transformer Primary & secondary voltages.",
+      "2. Check healthiness of input voltage sensors and feedback section; replace voltage sensor card if defective."
+    ]
+  },
+  {
+    "id": "fault-14613---14614",
+    "code": "14613 / 14614",
+    "ddu_code": "Code 14613 / 14614 (Sec 6.4 / 6.5)",
+    "category": "HVAC & Ventilation",
+    "title": "R1 / R2 Comp1 / Comp2 LPS Faulty (Low Pressure Switch)",
+    "symptom": "R1 / R2 Comp1 / Comp2 LPS Faulty (Low Pressure Switch). Reported at RMPU. Ref: SCHEMATIC DIAGRAM FOR MAE675UV2 ED 1348 FOR DTC, ED 1349 for MC1, ED 1353 FOR MC2, ED 1350 for TC, ED 1351 FOR NDTC1, ED 1352 FOR NDTC2.",
+    "page_reference": "Vol-1 p. 585 (Sec 6.4 / 6.5)",
+    "page": 585,
+    "sec_ref": "6.4 / 6.5",
+    "chapter": "Chapter 6: HVAC Faults",
+    "safety_speed_restriction": "Observe caution: Verify status on DDU. Clear block section according to Section Controller / TLC orders.",
+    "locations": [
+      "RMPU"
+    ],
+    "location": "RMPU",
+    "functional_group": "Group 11 (Ventilation) / Sub Functional group-1",
+    "schematic": "SCHEMATIC DIAGRAM FOR MAE675UV2 ED 1348 FOR DTC, ED 1349 for MC1, ED 1353 FOR MC2, ED 1350 for TC, ED 1351 FOR NDTC1, ED 1352 FOR NDTC2",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 11 (Ventilation) / Sub Functional group-1)",
+      "Physical hardware or pneumatic condition in RMPU",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "1. Check wiring between RMPU unit to corresponding pressure sensor.",
+      "2. If wiring ok, replace sensor with ok one.",
+      "3. Still if problem persists, replace RMPU unit."
+    ],
+    "checks": [
+      "1. Check wiring between RMPU unit to corresponding pressure sensor.",
+      "2. If wiring ok, replace sensor with ok one.",
+      "3. Still if problem persists, replace RMPU unit."
+    ]
+  },
+  {
+    "id": "fault-31232",
+    "code": "31232",
+    "ddu_code": "Code 31232 (Sec 7.1)",
+    "category": "PIS & CCTV",
+    "title": "GPS Communication Fail",
+    "symptom": "GPS Communication Fail. Reported at DTC. Ref: ED-1348 and Sub FG-14.",
+    "page_reference": "Vol-1 p. 598 (Sec 7.1)",
+    "page": 598,
+    "sec_ref": "7.1",
+    "chapter": "Chapter 7: PIS Faults",
+    "safety_speed_restriction": "Observe caution: Verify status on DDU. Clear block section according to Section Controller / TLC orders.",
+    "locations": [
+      "DTC"
+    ],
+    "location": "DTC",
+    "functional_group": "Group 14 (PIS & CCTV) / Sub Functional group-1",
+    "schematic": "ED-1348 and Sub FG-14",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 14 (PIS & CCTV) / Sub Functional group-1)",
+      "Physical hardware or pneumatic condition in DTC",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "1. Check Health status of GPS in MCP.",
+      "2. Check GPS connector at MCP.",
+      "3. Check wiring between MCP and GPS antenna.",
+      "4. Replace GPS Antenna."
+    ],
+    "checks": [
+      "1. Check Health status of GPS in MCP.",
+      "2. Check GPS connector at MCP.",
+      "3. Check wiring between MCP and GPS antenna.",
+      "4. Replace GPS Antenna."
+    ]
+  },
+  {
+    "id": "fault-31233",
+    "code": "31233",
+    "ddu_code": "Code 31233 (Sec 7.2)",
+    "category": "PIS & CCTV",
+    "title": "CCTV Communication Fail",
+    "symptom": "CCTV Communication Fail. Reported at DTC. Ref: ED-1348 and Sub FG-14.",
+    "page_reference": "Vol-1 p. 598 (Sec 7.2)",
+    "page": 598,
+    "sec_ref": "7.2",
+    "chapter": "Chapter 7: PIS Faults",
+    "safety_speed_restriction": "Observe caution: Verify status on DDU. Clear block section according to Section Controller / TLC orders.",
+    "locations": [
+      "DTC"
+    ],
+    "location": "DTC",
+    "functional_group": "Group 14 (PIS & CCTV) / Sub Functional group-1",
+    "schematic": "ED-1348 and Sub FG-14",
+    "root_causes": [
+      "Microprocessor or sensor telemetry anomaly (Group 14 (PIS & CCTV) / Sub Functional group-1)",
+      "Physical hardware or pneumatic condition in DTC",
+      "Feedback loop or wiring discontinuity / tripped MCB"
+    ],
+    "troubleshooting_steps": [
+      "1. Check health at MCP.",
+      "2. Check CCTV display power condition.",
+      "3. Check connection between switch and CCTV display."
+    ],
+    "checks": [
+      "1. Check health at MCP.",
+      "2. Check CCTV display power condition.",
+      "3. Check connection between switch and CCTV display."
+    ]
+  },
+  {
+    "id": "fault-14672-14704",
+    "code": "14672 / 14704",
+    "ddu_code": "Code 14672 / 14704 (Sec 5.1/5.2)",
+    "category": "VFD Systems",
+    "title": "VFD 1 / VFD 2 Communication Failure or Drive Trip",
+    "symptom": "TCMS loses RS-485 Modbus communication with VFD drive; Ventilation Blower speed regulation lost; DDU alarm.",
+    "page_reference": "Vol-1 p. 577 (Sec 5.1/5.2)",
+    "page": 577,
+    "sec_ref": "5.1 / 5.2",
+    "chapter": "Chapter 5: VFD Faults",
+    "safety_speed_restriction": "Normal speed if redundant blower operative; If both blowers fail in one coach, isolate coach VFD and observe motor temp limit (130 km/h).",
+    "locations": [
+      "TC Auxiliary Equipment Panel",
+      "MC Underframe Equipment Box"
+    ],
+    "location": "TC Auxiliary Equipment Panel, MC Underframe Equipment Box",
+    "functional_group": "Group 11 (Ventilation / Blower VFD)",
+    "schematic": "ED 1350 for TC, ED 1349 for MC",
+    "root_causes": [
+      "RS-485 Modbus communication cable loose or damaged",
+      "110V DC VFD control power supply MCB tripped",
+      "Blower impeller obstruction causing drive overcurrent/thermal trip"
+    ],
+    "troubleshooting_steps": [
+      "1. Check RS-485 communication cable between TCMS and VFD controller.",
+      "2. Verify 110V DC control power MCB of VFD is in ON condition.",
+      "3. Check VFD display unit error code (Overcurrent, Phase loss, or Inverter trip).",
+      "4. If VFD is locked, reset via VFD local reset switch or cycle control power.",
+      "5. Inspect blower fan impellers for foreign debris or mechanical rubbing."
+    ],
+    "checks": [
+      "1. Check RS-485 communication cable between TCMS and VFD controller.",
+      "2. Verify 110V DC control power MCB of VFD is in ON condition.",
+      "3. Check VFD display unit error code (Overcurrent, Phase loss, or Inverter trip).",
+      "4. If VFD is locked, reset via VFD local reset switch or cycle control power.",
+      "5. Inspect blower fan impellers for foreign debris or mechanical rubbing."
+    ]
+  },
+  {
+    "id": "smi-2024-b1-cp-pin",
+    "code": "SMI-2024/B/1",
+    "ddu_code": "SMI-2024/B/1 / CP-PIN-FASTENERS",
+    "category": "Suspension & Bogie",
+    "title": "Preventive Checks for CP Pin (Centre Pivot) Bottom Plate Fasteners",
+    "symptom": "Loosening or breakage of CP Pin bottom plate fasteners reported in service. Shifted/broken torque marking; abnormal underframe vibration or bogie-carbody displacement.",
+    "page_reference": "ICF/QMS/MDM/File/F015 (17.07.2024)",
+    "page": 1,
+    "sec_ref": "SMI-2024/B/1",
+    "chapter": "Special Maintenance Instructions: Bogie & Mechanical",
+    "safety_speed_restriction": "MANDATORY: If CP Pin bottom plate fasteners are found loose or broken in service, train must be inspected immediately at next halt. Strict caution order / speed restriction if abnormal bogie displacement detected.",
+    "locations": [
+      "Underframe Bogie Traction Centre Assembly",
+      "Centre Pivot Pin (CP Pin) Bottom Cover (Drg AAA06079)",
+      "Bogie Secondary Suspension Stage-II (Drg 89005004)"
+    ],
+    "location": "Underframe Bogie Traction Centre Assembly, CP Pin Bottom Cover",
+    "functional_group": "Group 0-0 (Bogie) / Traction Centre & Centre Pivot Pin",
+    "schematic": "Annexure A: J&T/G-1117/01 (Gap Gauge); Annexure B: 89005004, 89006002, 89006004, 41057501, 89006001, AAA06079",
+    "root_causes": [
+      "Vibrational loosening and dynamic cyclic shear stress on bottom cover fasteners in service",
+      "Faded or missing torque sealant marks obscuring fastener movement during trip inspections",
+      "Improper pre-load or uneven torque tightening without calibrated 3-step sequence",
+      "Incorrect gap between CP pin bottom face and centre pivot bearing bottom face (< or > 15 ± 1 mm)"
+    ],
+    "troubleshooting_steps": [
+      "1. VISUAL INSPECTION: Inspect torque markings on CP Pin bottom plate fasteners. Check for any deviation, cracking, or shifting in torque seal.",
+      "2. TORQUE MARK INTEGRITY: If torque marks are faded (original marker ink from ICF), clean surface and apply durable Fluorescent Paint / Dykem Cross Check Torque Seal across bolt head and bottom plate.",
+      "3. FASTENER REPLACEMENT CRITERIA: If any shifting of torque marks, loose fasteners, or crack is detected, DO NOT re-tighten existing bolts. Remove bolts, washers, and bottom plate. Always replace with NEW fasteners and pre-assembled Nord-Lock washer pairs.",
+      "4. CRITICAL GAP INSPECTION (15 ± 1 mm): Ensure the gap between CP Pin bottom face and Centre Pivot Bearing bottom face is strictly 15 (± 1) mm using ICF Gauge J&T/G-1117/01 (Annexure A).",
+      "5. PIT JACK LIFTING PROCEDURE: If gap is not 15 (± 1) mm, push traction centre upwards using suitable jacks supported on a bench over the pit with slight lifting force. Wipe mating surfaces clean and apply slight grease for ease of installation.",
+      "6. ANTI-SEIZE COMPOUND APPLICATION: Coat the entire thread length and bottom of the bolt head with 'Molykote 1000' anti-seize compound before installation.",
+      "7. SEQUENTIAL 3-STAGE TORQUE TIGHTENING (Table 99): Tighten fasteners evenly and sequentially using a calibrated torque wrench: Step 1 = 116 Nm -> Step 2 = 174 Nm -> Step 3 = 232 Nm.",
+      "8. FINAL TORQUE SEAL MARKING: After torquing to 232 Nm, apply fresh, clearly visible fluorescent paint torque line (Dykem Cross Check Torque Seal) across bolt head and cover plate for subsequent trip inspections."
+    ],
+    "checks": [
+      "1. Visual inspection of CP Pin bottom cover torque markings.",
+      "2. Verify gap between CP pin bottom face and bearing bottom face is 15 ± 1 mm using Gauge J&T/G-1117/01.",
+      "3. Check for fastener loosening or missing bolts; replace with new bolts + Nord-Lock washers if loose.",
+      "4. Apply Molykote 1000 on threads and under bolt head.",
+      "5. Tighten sequentially: 116 Nm -> 174 Nm -> 232 Nm.",
+      "6. Apply Dykem fluorescent torque seal."
+    ],
+    "images": [
+      {
+        "title": "Vande Bharat Bogie Assembly",
+        "caption": "Overall Bogie Assembly showing CP Pin, Secondary Air Spring, Traction Motor, Brake Caliper, Dampers",
+        "path": "images/vb_bogie_assembly.jpg"
+      },
+      {
+        "title": "CP Pin & Traction Centre Assembly CAD",
+        "caption": "Cross-section showing CP Pin, Traction Centre Assembly, Fasteners, and Bottom Cover",
+        "path": "images/cp_pin_cad_assembly.jpg"
+      },
+      {
+        "title": "Existing Faded Marker Torque Line (ICF)",
+        "caption": "Existing torque mark with marker on bottom cover plate, prone to fading in service",
+        "path": "images/cp_pin_torque_marker_faded.jpg"
+      },
+      {
+        "title": "Fluorescent Paint Torque Seal Marking (Dykem)",
+        "caption": "New lasting fluorescent paint line (Dykem Cross Check) applied across bolt heads and bottom plate",
+        "path": "images/cp_pin_fluorescent_torque_seal.jpg"
+      },
+      {
+        "title": "CP Pin to Bearing 15mm Gap Check",
+        "caption": "3D CAD view of critical 15 ± 1 mm dimension between CP pin bottom face and centre pivot bearing",
+        "path": "images/cp_pin_bearing_15mm_gap_cad.jpg"
+      },
+      {
+        "title": "CP Pin Engagement Cross Section (15 ± 1 mm)",
+        "caption": "Detailed cross-section dimension showing bush inner step and CP pin bottom clearance",
+        "path": "images/cp_pin_engagement_cross_section.jpg"
+      },
+      {
+        "title": "Pit Jack Lifting Arrangement",
+        "caption": "Supporting bench on pit surface with jacks pushing traction centre upwards to maintain 15 ± 1 mm gap",
+        "path": "images/pit_jack_lifting_arrangement.jpg"
+      },
+      {
+        "title": "Fastener Fitment & Torque Sequence",
+        "caption": "Nord-Lock washer installation, Molykote 1000 anti-seize coating, and Table 99 sequential tightening (116 -> 174 -> 232 Nm)",
+        "path": "images/nordlock_molykote_torque_assembly.jpg"
+      },
+      {
+        "title": "Dykem Cross Check Torque Seal Tubes",
+        "caption": "Fluorescent torque seal marker tubes recommended by ICF for lasting inspection visibility",
+        "path": "images/dykem_torque_seal_tubes.jpg"
+      }
+    ]
+  }
+];
+
+    // User Uploaded Custom PDF / Doc Pages
+    let customIngestedPages = [];
+
+    // Tab Navigation Logic
+    function switchTab(targetTabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        if (btn.getAttribute('data-tab') === targetTabId) {
+          btn.classList.add('active', 'bg-[var(--primary,#2563eb)]', 'text-white', 'shadow');
+          btn.classList.remove('bg-[var(--card,#1e293b)]', 'text-[var(--muted-foreground,#94a3b8)]');
+        } else {
+          btn.classList.remove('active', 'bg-[var(--primary,#2563eb)]', 'text-white', 'shadow');
+          btn.classList.add('bg-[var(--card,#1e293b)]', 'text-[var(--muted-foreground,#94a3b8)]');
+        }
+      });
+
+      document.querySelectorAll('.tab-content').forEach(content => {
+        if (content.id === targetTabId) {
+          content.classList.remove('hidden');
+        } else {
+          content.classList.add('hidden');
+        }
+      });
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        switchTab(btn.getAttribute('data-tab'));
+      });
+    });
+
+    // Populate Sidebar Sections List with Search Filter
+    const sectionsListEl = document.getElementById('manual-sections-list');
+    const manualSearchInput = document.getElementById('manual-search-input');
+
+    function renderSectionsList(filterText = '') {
+      sectionsListEl.innerHTML = '';
+      const term = filterText.toLowerCase().trim();
+
+      const items = manualDatabase.filter(item => {
+        if (!term) return true;
+        return (item.code || '').toLowerCase().includes(term) ||
+               (item.title || '').toLowerCase().includes(term) ||
+               (item.category || '').toLowerCase().includes(term) ||
+               (item.chapter || '').toLowerCase().includes(term);
+      });
+
+      if (items.length === 0) {
+        sectionsListEl.innerHTML = '<div class="p-4 text-center text-xs text-[var(--muted-foreground,#94a3b8)]">No manual sections match your search.</div>';
+        return;
+      }
+
+      items.forEach((item) => {
+        const itemBtn = document.createElement('button');
+        itemBtn.className = 'w-full text-left p-2.5 rounded-lg bg-[var(--background,#0f172a)] hover:bg-[var(--border,#334155)] border border-[var(--card-border,#334155)] transition-all space-y-1 block';
+        const chShort = (item.chapter || '').split(':')[0] || 'Ch';
+        itemBtn.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-[11px] text-blue-400 font-mono">${item.code}</span>
+            <span class="text-[9px] px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-300 font-mono">${chShort}</span>
+          </div>
+          <div class="font-medium text-xs text-[var(--foreground,#f8fafc)] line-clamp-1">${item.title}</div>
+          <div class="text-[10px] text-[var(--muted-foreground,#94a3b8)] flex items-center justify-between">
+            <span>${item.category}</span>
+            <span class="font-mono text-[9px] text-amber-400/80">${item.page_reference}</span>
+          </div>
+        `;
+        itemBtn.onclick = () => renderManualDetail(item);
+        sectionsListEl.appendChild(itemBtn);
+      });
+    }
+
+    if (manualSearchInput) {
+      manualSearchInput.addEventListener('input', (e) => {
+        renderSectionsList(e.target.value);
+      });
+    }
+    renderSectionsList();
+
+    // Render Manual Detail in Viewer
+    function renderManualDetail(item) {
+      document.getElementById('viewer-badge').innerText = item.ddu_code;
+      document.getElementById('viewer-title').innerText = item.title;
+      document.getElementById('viewer-meta').innerText = `${item.chapter} | ${item.page_reference} | OEM: Medha MAE675UV2`;
+
+      const viewerContent = document.getElementById('viewer-content');
+      viewerContent.innerHTML = `
+        <!-- Speed Limit Banner -->
+        <div class="p-3.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 space-y-1">
+          <div class="font-bold flex items-center gap-1.5 text-xs uppercase tracking-wide">
+            <span>⚠️</span> Mandatory Speed Restriction (Vmax)
+          </div>
+          <p class="text-xs font-semibold">${item.safety_speed_restriction}</p>
+        </div>
+
+        <!-- Schematic Drawing & Functional Group -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+          ${item.schematic ? `
+            <div class="p-2.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-300">
+              <span class="font-bold text-[10px] uppercase block tracking-wider text-indigo-400">📐 OEM Schematic Reference</span>
+              <span class="font-mono text-xs">${item.schematic}</span>
+            </div>
+          ` : ''}
+          ${item.functional_group ? `
+            <div class="p-2.5 rounded bg-slate-800 border border-slate-700 text-slate-300">
+              <span class="font-bold text-[10px] uppercase block tracking-wider text-slate-400">⚙️ Functional Group</span>
+              <span>${item.functional_group}</span>
+            </div>
+          ` : ''}
+        </div>
+
+        <!-- Symptom & Annunciation -->
+        <div class="space-y-1.5">
+          <div class="font-bold text-xs uppercase tracking-wide text-blue-400">Symptom & Annunciation</div>
+          <p class="p-2.5 rounded bg-[var(--background,#0f172a)] border border-[var(--card-border,#334155)] text-xs text-[var(--foreground,#f8fafc)]">${item.symptom}</p>
+        </div>
+
+        <!-- Suspected Root Causes -->
+        <div class="space-y-1.5">
+          <div class="font-bold text-xs uppercase tracking-wide text-[var(--foreground,#f8fafc)]">Suspected Root Causes</div>
+          <ul class="list-disc pl-5 space-y-1 text-xs text-[var(--muted-foreground,#94a3b8)]">
+            ${(item.root_causes || []).map(rc => `<li>${rc}</li>`).join('')}
+          </ul>
+        </div>
+
+        <!-- Locations & Access Panels -->
+        <div class="space-y-1.5">
+          <div class="font-bold text-xs uppercase tracking-wide text-emerald-400">Physical Locations & Access Panels</div>
+          <div class="flex flex-wrap gap-1.5">
+            ${(item.locations || []).map(loc => `<span class="px-2 py-1 rounded bg-[var(--background,#0f172a)] border border-[var(--card-border,#334155)] text-xs text-emerald-300">📍 ${loc}</span>`).join('')}
+          </div>
+        </div>
+
+        <!-- Step-by-Step SOP -->
+        <div class="space-y-2 pt-2 border-t border-[var(--card-border,#334155)]">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-xs uppercase tracking-wide text-blue-400">Official CAMTECH Step-by-Step Troubleshooting SOP</span>
+            <button onclick="sendToChat('${item.code}')" class="text-xs text-blue-400 hover:underline">
+              Query in Chat ➔
+            </button>
+          </div>
+          <div class="space-y-2">
+            ${(item.troubleshooting_steps || []).map((step, idx) => `
+              <div class="flex items-start gap-2.5 p-2 rounded bg-[var(--background,#0f172a)] border border-[var(--card-border,#334155)] text-xs">
+                <span class="font-mono font-bold text-blue-400 shrink-0">${idx + 1}.</span>
+                <span class="text-[var(--foreground,#f8fafc)]">${step}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Embedded Technical Drawings & Field Photo Gallery -->
+        ${(item.images && item.images.length > 0) ? `
+          <div class="space-y-3 pt-3 border-t border-[var(--card-border,#334155)]">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-xs uppercase tracking-wide text-amber-400 flex items-center gap-1.5">
+                <span>🖼️</span> Official Technical Drawings & Field Photographs
+              </span>
+              <span class="text-[10px] text-zinc-400 font-mono bg-zinc-800 px-2 py-0.5 rounded border border-zinc-700">
+                ${item.images.length} Illustrations
+              </span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              ${item.images.map(img => `
+                <div onclick="openImageModal('${img.path}', '${img.title.replace(/'/g, "\\'")}', '${img.caption.replace(/'/g, "\\'")}')" class="bg-slate-900 border border-slate-800 hover:border-amber-400 rounded-xl overflow-hidden cursor-pointer group transition-all shadow hover:shadow-lg flex flex-col justify-between">
+                  <div class="bg-black/60 p-2 flex items-center justify-center max-h-48 overflow-hidden relative">
+                    <img src="${img.path}" alt="${img.title}" class="max-h-44 w-auto object-contain rounded transition-transform group-hover:scale-105" loading="lazy">
+                    <span class="absolute top-2 right-2 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">🔍 Enlarge</span>
+                  </div>
+                  <div class="p-2.5 space-y-0.5 bg-slate-900/90 border-t border-slate-800">
+                    <div class="font-bold text-xs text-amber-300 group-hover:text-amber-200">${img.title}</div>
+                    <div class="text-[11px] text-zinc-400 line-clamp-2 leading-relaxed">${img.caption}</div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+      `;
+    }
+
+    // Populate DDU Fault Code Matrix
+    const matrixGrid = document.getElementById('fault-matrix-grid');
+    function renderFaultMatrix(filter = 'ALL') {
+      matrixGrid.innerHTML = '';
+      const filtered = filter === 'ALL' ? manualDatabase : manualDatabase.filter(m => m.category === filter);
+      filtered.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'bg-[var(--background,#0f172a)] border border-[var(--card-border,#334155)] hover:border-blue-500 rounded-xl p-3.5 space-y-2.5 transition-all flex flex-col justify-between';
+        const chTag = (item.chapter || '').split(':')[0] || 'TCMS';
+        card.innerHTML = `
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="px-2 py-0.5 rounded font-mono font-bold text-[10px] bg-red-500/20 text-red-400 border border-red-500/30">
+                ${item.code}
+              </span>
+              <span class="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 font-mono">${chTag}</span>
+            </div>
+            <div class="font-semibold text-xs text-[var(--foreground,#f8fafc)] line-clamp-1" title="${item.title}">${item.title}</div>
+            <div class="text-[10px] text-blue-400/90 font-medium">${item.category}</div>
+            <p class="text-[11px] text-[var(--muted-foreground,#94a3b8)] line-clamp-2">${item.symptom}</p>
+          </div>
+          <div class="pt-2 border-t border-[var(--card-border,#334155)] flex items-center justify-between">
+            <button onclick="inspectFromMatrix('${item.id}')" class="text-[11px] text-blue-400 hover:text-blue-300 font-medium">
+              View Manual
+            </button>
+            <button onclick="sendToChat('${item.code}')" class="px-2 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white font-medium text-[10px] transition-colors shadow">
+              Troubleshoot ➔
+            </button>
+          </div>
+        `;
+        matrixGrid.appendChild(card);
+      });
+    }
+    renderFaultMatrix();
+
+    document.getElementById('matrix-subsystem-filter').addEventListener('change', (e) => {
+      renderFaultMatrix(e.target.value);
+    });
+
+    function inspectFromMatrix(id) {
+      const found = manualDatabase.find(m => m.id === id);
+      if (found) {
+        switchTab('tab-pdf');
+        renderManualDetail(found);
+      }
+    }
+
+    // Pure JavaScript PDF Parser & Ingestor using DecompressionStream
+    const dropZone = document.getElementById('drop-zone');
+    const pdfFileInput = document.getElementById('pdf-file-input');
+    const uploadStatus = document.getElementById('upload-status');
+    const uploadStatusText = document.getElementById('upload-status-text');
+
+    dropZone.addEventListener('click', () => pdfFileInput.click());
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-blue-500'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-blue-500'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('border-blue-500');
+      if (e.dataTransfer.files.length) handleDocumentUpload(e.dataTransfer.files[0]);
+    });
+
+    pdfFileInput.addEventListener('change', (e) => {
+      if (e.target.files.length) handleDocumentUpload(e.target.files[0]);
+    });
+
+    async function handleDocumentUpload(file) {
+      uploadStatus.classList.remove('hidden');
+      uploadStatusText.innerText = `Ingesting ${file.name}...`;
+
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const extractedText = await parsePdfTextInBrowser(arrayBuffer);
+
+        if (!extractedText || extractedText.trim().length === 0) {
+          throw new Error('No extractable text found in PDF stream. File may be purely scanned image without embedded text.');
+        }
+
+        indexUploadedText(file.name, extractedText);
+        uploadStatusText.innerText = `Successfully ingested ${file.name}! Query in chat or explore parsed sections.`;
+        document.getElementById('pdf-loaded-badge').innerText = 'Custom PDF Ingested';
+        document.getElementById('pdf-loaded-badge').className = 'text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded border border-blue-500/30';
+        document.getElementById('doc-source-label').innerText = `Active Manual: ${file.name}`;
+
+        // Switch to Chat tab
+        setTimeout(() => switchTab('tab-chat'), 600);
+      } catch (err) {
+        console.error('PDF parsing error:', err);
+        uploadStatusText.innerText = `Failed to parse: ${err.message}`;
+      }
+    }
+
+    // Client-side pure PDF stream text extractor using native DecompressionStream
+    async function parsePdfTextInBrowser(arrayBuffer) {
+      const uint8 = new Uint8Array(arrayBuffer);
+      const latin1 = new TextDecoder('latin1').decode(uint8);
+      const streamRegex = new RegExp('stream[\\r\\n]+([\\s\\S]*?)[\\r\\n]+endstream', 'g');
+      let match;
+      let fullText = '';
+      let streamCount = 0;
+
+      while ((match = streamRegex.exec(latin1)) !== null) {
+        streamCount++;
+        const streamStartIndex = match.index + match[0].indexOf('stream') + 6;
+        const actualStart = (latin1[streamStartIndex] === '\r' && latin1[streamStartIndex+1] === '\n') ? streamStartIndex + 2 : streamStartIndex + 1;
+        const endStreamIndex = match.index + match[0].lastIndexOf('endstream');
+        const rawBytes = uint8.subarray(actualStart, endStreamIndex);
+
+        try {
+          // Native browser DecompressionStream for FlateDecode
+          const ds = new DecompressionStream('deflate');
+          const writer = ds.writable.getWriter();
+          writer.write(rawBytes);
+          writer.close();
+
+          const reader = ds.readable.getReader();
+          const chunks = [];
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+          }
+
+          let totalLen = chunks.reduce((acc, c) => acc + c.length, 0);
+          let decompressed = new Uint8Array(totalLen);
+          let offset = 0;
+          for (let c of chunks) {
+            decompressed.set(c, offset);
+            offset += c.length;
+          }
+
+          const decodedStr = new TextDecoder('latin1').decode(decompressed);
+          const tjMatches = decodedStr.match(/\(([^)]*)\)\s*Tj/g) || [];
+          for (let m of tjMatches) {
+            const textMatch = m.match(/\(([^)]*)\)/);
+            if (textMatch && textMatch[1]) {
+              fullText += textMatch[1] + ' ';
+            }
+          }
+
+          const arrayMatches = decodedStr.match(/\[([^\]]*)\]\s*TJ/g) || [];
+          for (let arr of arrayMatches) {
+            const inner = arr.match(/\(([^)]*)\)/g) || [];
+            for (let inText of inner) {
+              const t = inText.slice(1, -1);
+              if (t) fullText += t + ' ';
+            }
+          }
+          fullText += '\n';
+        } catch (e) {
+          // Uncompressed or unsupported filter stream
+          const snippet = latin1.substring(actualStart, Math.min(actualStart + 200, endStreamIndex));
+          const tj = snippet.match(/\(([^)]*)\)\s*Tj/g) || [];
+          tj.forEach(t => fullText += t.replace(/.*\((.*)\).*/, '$1') + ' ');
+        }
+      }
+
+      return fullText;
+    }
+
+    function indexUploadedText(fileName, rawText) {
+      const paragraphs = rawText.split(/\n\s*\n|\.\s{2,}/).filter(p => p.trim().length > 30);
+      customIngestedPages = paragraphs.map((para, i) => ({
+        pageNumber: i + 1,
+        source: fileName,
+        content: para.replace(/\s+/g, ' ').trim()
+      }));
+
+      // Append to Manual Sections Viewer
+      const uploadHeader = document.createElement('div');
+      uploadHeader.className = 'p-2 text-xs font-bold text-emerald-400 bg-emerald-500/10 rounded mt-3 border border-emerald-500/20';
+      uploadHeader.innerText = `Uploaded Document: ${fileName} (${customIngestedPages.length} Excerpts)`;
+      sectionsListEl.prepend(uploadHeader);
+
+      customIngestedPages.slice(0, 15).forEach((p) => {
+        const btn = document.createElement('button');
+        btn.className = 'w-full text-left p-2 rounded bg-[var(--card,#1e293b)] hover:bg-[var(--border,#334155)] border border-[var(--card-border,#334155)] text-xs text-[var(--foreground,#f8fafc)] line-clamp-2';
+        btn.innerText = `[Excerpt #${p.pageNumber}] ${p.content.slice(0, 80)}...`;
+        btn.onclick = () => {
+          document.getElementById('viewer-badge').innerText = `Excerpt #${p.pageNumber}`;
+          document.getElementById('viewer-title').innerText = fileName;
+          document.getElementById('viewer-meta').innerText = 'Custom Ingested Section';
+          document.getElementById('viewer-content').innerHTML = `
+            <div class="p-3 bg-[var(--background,#0f172a)] border border-[var(--card-border,#334155)] rounded-lg text-xs leading-relaxed">
+              ${p.content}
+            </div>
+          `;
+        };
+        sectionsListEl.appendChild(btn);
+      });
+    }
+
+    // Chatbot Engine & Query Processing
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const chatMessages = document.getElementById('chat-messages');
+
+    function sendToChat(query) {
+      switchTab('tab-chat');
+      chatInput.value = query;
+      processUserMessage(query);
+      chatInput.value = '';
+    }
+
+    document.querySelectorAll('.quick-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const query = chip.getAttribute('data-query');
+        sendToChat(query);
+      });
+    });
+
+    document.getElementById('clear-chat').addEventListener('click', () => {
+      chatMessages.innerHTML = '';
+      appendBotResponse('<p class="text-xs text-[var(--muted-foreground,#94a3b8)]">Chat history cleared. Enter any fault code or symptom to begin diagnosis.</p>');
+    });
+
+    chatForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const val = chatInput.value.trim();
+      if (!val) return;
+      processUserMessage(val);
+      chatInput.value = '';
+    });
+
+    function appendUserMessage(text) {
+      const div = document.createElement('div');
+      div.className = 'flex items-start justify-end gap-3';
+      div.innerHTML = `
+        <div class="bg-blue-600 text-white rounded-2xl rounded-tr-none p-3.5 max-w-[85%] text-xs md:text-sm shadow">
+          ${text}
+        </div>
+      `;
+      chatMessages.appendChild(div);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function appendBotResponse(htmlContent) {
+      const div = document.createElement('div');
+      div.className = 'flex items-start gap-3';
+      div.innerHTML = `
+        <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs shrink-0 shadow">
+          VB
+        </div>
+        <div class="bg-[var(--background,#0f172a)] border border-[var(--card-border,#334155)] rounded-2xl rounded-tl-none p-4 max-w-[90%] space-y-3 shadow text-xs md:text-sm">
+          ${htmlContent}
+        </div>
+      `;
+      chatMessages.appendChild(div);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function processUserMessage(userQuery) {
+      appendUserMessage(userQuery);
+
+      const q = userQuery.toLowerCase().trim();
+
+      // Check if user asked for chapter overview
+      if (q.includes('vmax') || q.includes('speed') || q.includes('restriction') || q.includes('isolation speed')) {
+        setTimeout(() => {
+          appendBotResponse(`
+            <div class="pb-2 border-b border-[var(--card-border,#334155)]">
+              <span class="font-mono font-bold text-blue-400 text-xs">MANDATORY SPEED RESTRICTIONS (Vmax)</span>
+              <h4 class="font-bold text-sm text-[var(--foreground,#f8fafc)]">Vande Bharat 16-Car vs 8-Car Bogie Isolation & Emergency Limits</h4>
+            </div>
+
+            <!-- Comparative Speed Matrix Table -->
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-700 text-zinc-400">
+                    <th class="py-1.5 pr-2">Condition / Isolated Bogies</th>
+                    <th class="py-1.5 px-2 text-center text-blue-400 font-mono">16-Car Rake</th>
+                    <th class="py-1.5 px-2 text-center text-amber-400 font-mono">8-Car Rake</th>
+                    <th class="py-1.5 pl-2">Operational Directive</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800 text-[11px]">
+                  <tr>
+                    <td class="py-1.5 font-medium text-emerald-400">1 Bogie Isolated</td>
+                    <td class="py-1.5 px-2 text-center font-mono font-bold text-emerald-300">155 km/h</td>
+                    <td class="py-1.5 px-2 text-center font-mono font-bold text-emerald-300">150 km/h</td>
+                    <td class="py-1.5 pl-2 text-zinc-300">Normal run; log in defect register</td>
+                  </tr>
+                  <tr>
+                    <td class="py-1.5 font-medium text-emerald-400">2 Bogies Isolated</td>
+                    <td class="py-1.5 px-2 text-center font-mono font-bold text-emerald-300">150 km/h</td>
+                    <td class="py-1.5 px-2 text-center font-mono font-bold text-amber-300">140 km/h</td>
+                    <td class="py-1.5 pl-2 text-zinc-300">Cautious driving; extended braking distance</td>
+                  </tr>
+                  <tr>
+                    <td class="py-1.5 font-medium text-amber-400">3 Bogies Isolated</td>
+                    <td class="py-1.5 px-2 text-center font-mono font-bold text-amber-300">145 km/h</td>
+                    <td class="py-1.5 px-2 text-center font-mono font-bold text-amber-300">120 km/h</td>
+                    <td class="py-1.5 pl-2 text-zinc-300">Proportional speed step down</td>
+                  </tr>
+                  <tr>
+                    <td class="py-1.5 font-medium text-amber-400">4 Bogies Isolated</td>
+                    <td class="py-1.5 px-2 text-center font-mono font-bold text-amber-300">140 km/h</td>
+                    <td class="py-1.5 px-2 text-center font-mono font-bold text-red-400">90 km/h</td>
+                    <td class="py-1.5 pl-2 text-zinc-300">Inform TLC; proceed with caution</td>
+                  </tr>
+                  <tr class="bg-red-500/10">
+                    <td class="py-1.5 font-medium text-red-400">Air Spring Deflated</td>
+                    <td class="py-1.5 px-2 text-center font-mono font-bold text-red-400" colspan="2">60 km/h STRICT</td>
+                    <td class="py-1.5 pl-2 text-red-300">Carbody resting on rubber bump stop</td>
+                  </tr>
+                  <tr class="bg-red-500/10">
+                    <td class="py-1.5 font-medium text-red-400">Locked Axle (Genuine)</td>
+                    <td class="py-1.5 px-2 text-center font-mono font-bold text-red-400" colspan="2">0 km/h (HALT)</td>
+                    <td class="py-1.5 pl-2 text-red-300">Immediate stop; do not drag wheel</td>
+                  </tr>
+                  <tr class="bg-red-500/10">
+                    <td class="py-1.5 font-medium text-red-400">Door Open (ADCR Loop)</td>
+                    <td class="py-1.5 px-2 text-center font-mono font-bold text-red-400" colspan="2">0 km/h (HALT)</td>
+                    <td class="py-1.5 pl-2 text-red-300">Traction cut off automatically</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="pt-1 text-[11px] text-[var(--muted-foreground,#94a3b8)]">
+              <em>Note:</em> Speed reduction is proportional to brake power percentage loss (1 bogie in 8-car = 6.25% loss vs 3.125% in 16-car).
+            </div>
+          `);
+        }, 200);
+        return;
+      }
+
+      if (q.includes('chapter') || q.includes('overview') || q.includes('help') || q.includes('menu')) {
+        setTimeout(() => {
+          appendBotResponse(`
+            <div class="pb-2 border-b border-[var(--card-border,#334155)]">
+              <span class="font-mono font-bold text-blue-400 text-xs">IRCAMTECH/GWL/2023-24/Trainset/TSM/1.0</span>
+              <h4 class="font-bold text-sm text-[var(--foreground,#f8fafc)]">Vande Bharat Volume-1 Manual Chapters (Medha MAE675UV2)</h4>
+            </div>
+            <div class="space-y-1.5 text-xs text-[var(--foreground,#f8fafc)]">
+              <div class="p-2 rounded bg-slate-800/60 border border-slate-700"><strong>Chapter 1 (pp. 5–9):</strong> Introduction, Abbreviations & Basic Unit Rake Layout</div>
+              <div class="p-2 rounded bg-slate-800/60 border border-slate-700"><strong>Chapter 2 (pp. 10–428):</strong> TCMS Faults (Door ADCR 12803, Brake BIC 1530, Stuck Brake 597, PB 543, EBL 4099, ADD 623, VCB 805, Air Bellows 560, Fire 4126, Battery 24)</div>
+              <div class="p-2 rounded bg-slate-800/60 border border-slate-700"><strong>Chapter 3 (pp. 429–501):</strong> Auxiliary Converter ACU Faults (A1/A2 Overcurrent 10242, Input Undervoltage 10767)</div>
+              <div class="p-2 rounded bg-slate-800/60 border border-slate-700"><strong>Chapter 4 (pp. 502–575):</strong> LTC Line & Traction Converter Faults (Locked Axle 17051, Pinion Slip 17047, TM Stator Overtemp 16938)</div>
+              <div class="p-2 rounded bg-slate-800/60 border border-slate-700"><strong>Chapter 5 (pp. 576–582):</strong> VFD Systems Faults (VFD Comm Fail 14672, Inverter Trip)</div>
+              <div class="p-2 rounded bg-slate-800/60 border border-slate-700"><strong>Chapter 6 (pp. 583–596):</strong> HVAC Faults (RMPU Comp LPS Low Pressure 14613)</div>
+              <div class="p-2 rounded bg-slate-800/60 border border-slate-700"><strong>Chapter 7 (pp. 597–642):</strong> PIS & CCTV Faults (GPS Fail 31232, CCTV Comm Fail 31233)</div>
+            </div>
+            <div class="pt-2 text-[11px] text-[var(--muted-foreground,#94a3b8)]">Click any fault code or chip above to jump directly to its complete CAMTECH troubleshooting SOP.</div>
+          `);
+        }, 200);
+        return;
+      }
+
+      // Check if matches custom uploaded PDF chunks
+      let matchedCustom = [];
+      if (customIngestedPages.length > 0) {
+        matchedCustom = customIngestedPages.filter(p => {
+          const words = q.split(/\s+/).filter(w => w.length > 3);
+          return words.some(w => p.content.toLowerCase().includes(w));
+        }).slice(0, 2);
+      }
+
+      // Semantic & Exact Code Match against 28 Enriched Fault Cards
+      let bestMatch = null;
+      let bestScore = 0;
+      let secondaryMatches = [];
+
+      manualDatabase.forEach(item => {
+        let score = 0;
+        const code = (item.code || '').toLowerCase();
+        const dduCode = (item.ddu_code || '').toLowerCase();
+        const title = (item.title || '').toLowerCase();
+        const cat = (item.category || '').toLowerCase();
+        const sym = (item.symptom || '').toLowerCase();
+        const steps = (item.troubleshooting_steps || []).join(' ').toLowerCase();
+        const schematic = (item.schematic || '').toLowerCase();
+
+        // Exact code or token code match (+100 score)
+        const codeTokens = code.split(/[\s/]+/);
+        if (codeTokens.includes(q) || q === code) {
+          score += 120;
+        } else if (code.includes(q) || dduCode.includes(q)) {
+          score += 60;
+        }
+
+        // Section reference match (e.g. 2.534, 4.14)
+        if (item.sec_ref && (q.includes(item.sec_ref.toLowerCase()) || q === item.sec_ref.toLowerCase())) {
+          score += 80;
+        }
+
+        // Keyword tokens
+        const tokens = q.split(/\s+/);
+        tokens.forEach(tok => {
+          if (tok.length < 2) return;
+          if (code.includes(tok)) score += 25;
+          if (title.includes(tok)) score += 18;
+          if (cat.includes(tok)) score += 12;
+          if (sym.includes(tok)) score += 8;
+          if (schematic.includes(tok)) score += 10;
+          if (steps.includes(tok)) score += 4;
+        });
+
+        // Specific Domain Term Boosts
+        if ((q.includes('door') || q.includes('adcr')) && item.code.includes('12803')) score += 30;
+        if ((q.includes('axle') || q.includes('wheel lock')) && item.code.includes('17051')) score += 30;
+        if ((q.includes('pinion') || q.includes('slip')) && item.code.includes('17047')) score += 30;
+        if ((q.includes('stator') || q.includes('overtemp') || q.includes('motor temp')) && item.code.includes('16938')) score += 30;
+        if ((q.includes('acu') || q.includes('auxiliary converter')) && item.code.includes('10767')) score += 30;
+        if ((q.includes('vfd') || q.includes('blower drive')) && item.code.includes('14672')) score += 30;
+        if ((q.includes('hvac') || q.includes('pressure switch') || q.includes('lps')) && item.code.includes('14613')) score += 30;
+        if ((q.includes('gps') || q.includes('pis') || q.includes('cctv')) && (item.code.includes('31232') || item.code.includes('31233'))) score += 30;
+        if ((q.includes('bind') || q.includes('bic') || q.includes('caliper')) && (item.code.includes('1530') || item.code.includes('597'))) score += 30;
+        if ((q.includes('parking') || q.includes('pb')) && item.code.includes('543')) score += 30;
+        if ((q.includes('panto') || q.includes('vcb') || q.includes('add')) && (item.code.includes('623') || item.code.includes('805'))) score += 30;
+        if ((q.includes('spring') || q.includes('bellow') || q.includes('suspension')) && item.code.includes('560')) score += 30;
+        if ((q.includes('battery') || q.includes('87v')) && item.code === '24') score += 30;
+        if ((q.includes('pivot') || q.includes('centre pivot') || q.includes('center pivot') || q.includes('cp pin') || q.includes('smi') || q.includes('torque seal') || q.includes('molykote') || q.includes('bottom plate') || q.includes('traction centre') || q.includes('15mm') || q.includes('232') || q.includes('dykem')) && item.code.includes('SMI-2024')) score += 180;
+        if ((q.includes('ebl') || q.includes('emergency brake loop')) && item.code.includes('4099')) score += 30;
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = item;
+        }
+
+        if (score >= 20) {
+          secondaryMatches.push({ item, score });
+        }
+      });
+
+      // Filter secondary matches
+      secondaryMatches.sort((a, b) => b.score - a.score);
+      const topRelated = secondaryMatches.filter(m => m.item.id !== (bestMatch ? bestMatch.id : '')).slice(0, 3).map(m => m.item);
+
+      // Generate response HTML
+      setTimeout(() => {
+        if (bestMatch && bestScore >= 8) {
+          let customCitationHtml = '';
+          if (matchedCustom.length > 0) {
+            customCitationHtml = `
+              <div class="p-2.5 rounded bg-blue-500/10 border border-blue-500/30 text-blue-300 space-y-1 mt-2">
+                <div class="font-bold text-[11px] flex items-center gap-1">
+                  <span>📄</span> Matched Excerpt from Uploaded PDF (${matchedCustom[0].source}):
+                </div>
+                <p class="text-xs italic">"...${matchedCustom[0].content.slice(0, 220)}..."</p>
+              </div>
+            `;
+          }
+
+          let relatedChipsHtml = '';
+          if (topRelated.length > 0) {
+            relatedChipsHtml = `
+              <div class="pt-2 border-t border-[var(--card-border,#334155)] space-y-1">
+                <span class="text-[10px] text-[var(--muted-foreground,#94a3b8)] font-semibold uppercase tracking-wider">Related Diagnostic SOPs:</span>
+                <div class="flex flex-wrap gap-1.5">
+                  ${topRelated.map(rel => `
+                    <button onclick="sendToChat('${rel.code}')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] text-blue-400 border border-slate-700">
+                      Code ${rel.code}: ${rel.title.slice(0, 28)}...
+                    </button>
+                  `).join('')}
+                </div>
+              </div>
+            `;
+          }
+
+          const responseHtml = `
+            <div class="flex items-center justify-between pb-2 border-b border-[var(--card-border,#334155)]">
+              <div>
+                <span class="font-mono font-bold text-blue-400 text-xs">Code ${bestMatch.code} ${bestMatch.sec_ref ? `(Sec ${bestMatch.sec_ref})` : ''}</span>
+                <h4 class="font-bold text-sm text-[var(--foreground,#f8fafc)]">${bestMatch.title}</h4>
+                <span class="text-[11px] text-[var(--muted-foreground,#94a3b8)]">${bestMatch.chapter}</span>
+              </div>
+              <span class="text-[10px] text-amber-400 font-mono bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 shrink-0">
+                ${bestMatch.page_reference}
+              </span>
+            </div>
+
+            <!-- Mandatory Safety Warning -->
+            <div class="p-2.5 rounded bg-red-500/10 border border-red-500/30 text-red-300">
+              <div class="font-bold text-xs uppercase flex items-center gap-1.5">
+                <span>⚠️</span> Mandatory Speed Restriction (Vmax):
+              </div>
+              <p class="text-xs font-semibold">${bestMatch.safety_speed_restriction}</p>
+            </div>
+
+            <!-- Schematic & Functional Group -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px]">
+              ${bestMatch.schematic ? `
+                <div class="p-2 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-300">
+                  <span class="font-bold block text-[10px] uppercase text-indigo-400">OEM Schematic:</span>
+                  <span class="font-mono">${bestMatch.schematic}</span>
+                </div>
+              ` : ''}
+              ${bestMatch.functional_group ? `
+                <div class="p-2 rounded bg-slate-800 border border-slate-700 text-slate-300">
+                  <span class="font-bold block text-[10px] uppercase text-slate-400">Functional Group:</span>
+                  <span>${bestMatch.functional_group}</span>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Locations -->
+            <div class="flex flex-wrap gap-1 text-[11px]">
+              ${(bestMatch.locations || []).map(l => `<span class="px-2 py-0.5 rounded bg-[var(--card-border,#334155)]/50 text-emerald-400 border border-[var(--card-border,#334155)]">📍 ${l}</span>`).join('')}
+            </div>
+
+            <!-- SMI Special Technical Card (Table 99 Torque & 15mm Gap) -->
+            ${bestMatch.code.includes('SMI-2024') ? `
+              <div class="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 space-y-2.5 text-xs">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-amber-300 uppercase tracking-wide flex items-center gap-1.5">
+                    <span>🔩</span> ICF Special Maintenance Instruction (SMI-2024/B/1)
+                  </span>
+                  <span class="text-[10px] font-mono bg-amber-500/20 px-2 py-0.5 rounded text-amber-300 border border-amber-500/30">
+                    Date: 17.07.2024
+                  </span>
+                </div>
+
+                <!-- 15mm Critical Gap -->
+                <div class="p-2.5 rounded bg-slate-900 border border-amber-500/30 text-slate-200 space-y-1">
+                  <div class="font-bold text-amber-400 flex items-center gap-1">
+                    <span>📏</span> Critical Dimension: CP Pin to Centre Pivot Bearing Gap = 15 ± 1 mm
+                  </div>
+                  <p class="text-[11px] text-slate-300">
+                    Check with ICF Inspection Gauge <strong>J&T/G-1117/01</strong> (Annexure A). If gap &ne; 15 &plusmn; 1 mm, use pit bench & jacks to push traction centre upwards with slight lifting force. Clean mating surfaces and apply slight grease.
+                  </p>
+                </div>
+
+                <!-- 3-Step Torque Table -->
+                <div class="space-y-1">
+                  <span class="font-bold text-[11px] text-blue-400 block uppercase">Table 99: Calibrated 3-Stage Tightening Torque (Sequential):</span>
+                  <div class="grid grid-cols-3 gap-1.5 text-center font-mono">
+                    <div class="p-2 rounded bg-slate-800 border border-slate-700">
+                      <div class="text-[10px] text-slate-400">Step 1 (Snug)</div>
+                      <div class="text-sm font-bold text-emerald-400">116 Nm</div>
+                    </div>
+                    <div class="p-2 rounded bg-slate-800 border border-slate-700">
+                      <div class="text-[10px] text-slate-400">Step 2 (Intermed)</div>
+                      <div class="text-sm font-bold text-amber-400">174 Nm</div>
+                    </div>
+                    <div class="p-2 rounded bg-slate-800 border border-slate-700">
+                      <div class="text-[10px] text-slate-400">Step 3 (Final)</div>
+                      <div class="text-sm font-bold text-red-400">232 Nm</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Critical Materials & Markings -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px]">
+                  <div class="p-2 rounded bg-slate-800/80 border border-slate-700">
+                    <strong class="text-emerald-400">Anti-Seize Lubricant:</strong> Apply <em>Molykote 1000</em> on entire thread length and bottom of bolt head.
+                  </div>
+                  <div class="p-2 rounded bg-slate-800/80 border border-slate-700">
+                    <strong class="text-amber-400">Torque Seal Mark:</strong> Apply fluorescent paint (<em>Dykem Cross Check</em>) line across bolt heads & plate.
+                  </div>
+                </div>
+
+                <!-- Interactive Visual Illustrations & Field Photos -->
+                <div class="space-y-2 pt-2 border-t border-amber-500/20">
+                  <div class="flex items-center justify-between">
+                    <span class="font-bold text-[11px] text-amber-300 uppercase tracking-wide flex items-center gap-1">
+                      <span>📸</span> Technical Illustrations (Click any image to enlarge):
+                    </span>
+                  </div>
+                  <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    <div onclick="openImageModal('images/vb_bogie_assembly.jpg', 'Vande Bharat Bogie Assembly', 'Overview showing CP Pin, Secondary Air Spring, Traction Motor, Brake Caliper, Dampers')" class="bg-black/40 border border-slate-700 hover:border-amber-400 rounded-lg overflow-hidden cursor-pointer group p-1 transition-all">
+                      <img src="images/vb_bogie_assembly.jpg" class="h-24 w-full object-contain rounded group-hover:scale-105 transition-transform">
+                      <div class="text-[10px] text-amber-200/90 font-medium truncate pt-1">Bogie 3D Assembly</div>
+                    </div>
+                    <div onclick="openImageModal('images/cp_pin_cad_assembly.jpg', 'CP Pin & Traction Centre CAD', 'Cross-section showing CP Pin, Traction Centre Assembly, Fasteners, and Bottom Cover')" class="bg-black/40 border border-slate-700 hover:border-amber-400 rounded-lg overflow-hidden cursor-pointer group p-1 transition-all">
+                      <img src="images/cp_pin_cad_assembly.jpg" class="h-24 w-full object-contain rounded group-hover:scale-105 transition-transform">
+                      <div class="text-[10px] text-amber-200/90 font-medium truncate pt-1">CP Pin & Traction Ctr</div>
+                    </div>
+                    <div onclick="openImageModal('images/cp_pin_fluorescent_torque_seal.jpg', 'Fluorescent Torque Seal (Dykem)', 'New lasting fluorescent paint line (Dykem Cross Check) applied across bolt heads and bottom plate')" class="bg-black/40 border border-slate-700 hover:border-amber-400 rounded-lg overflow-hidden cursor-pointer group p-1 transition-all">
+                      <img src="images/cp_pin_fluorescent_torque_seal.jpg" class="h-24 w-full object-contain rounded group-hover:scale-105 transition-transform">
+                      <div class="text-[10px] text-emerald-300 font-medium truncate pt-1">Dykem Torque Seal</div>
+                    </div>
+                    <div onclick="openImageModal('images/cp_pin_engagement_cross_section.jpg', 'CP Pin 15mm Gap Cross-Section', 'Mandatory 15 ± 1 mm dimension between CP Pin bottom face and Centre Pivot Bearing')" class="bg-black/40 border border-slate-700 hover:border-amber-400 rounded-lg overflow-hidden cursor-pointer group p-1 transition-all">
+                      <img src="images/cp_pin_engagement_cross_section.jpg" class="h-24 w-full object-contain rounded group-hover:scale-105 transition-transform">
+                      <div class="text-[10px] text-amber-200/90 font-medium truncate pt-1">15 ± 1 mm Gap CAD</div>
+                    </div>
+                    <div onclick="openImageModal('images/pit_jack_lifting_arrangement.jpg', 'Pit Jack Lifting Arrangement', 'Bench on pit surface supporting jacks for lifting traction center to maintain 15 ± 1 mm gap')" class="bg-black/40 border border-slate-700 hover:border-amber-400 rounded-lg overflow-hidden cursor-pointer group p-1 transition-all">
+                      <img src="images/pit_jack_lifting_arrangement.jpg" class="h-24 w-full object-contain rounded group-hover:scale-105 transition-transform">
+                      <div class="text-[10px] text-amber-200/90 font-medium truncate pt-1">Pit Jack Lifting Bench</div>
+                    </div>
+                    <div onclick="openImageModal('images/nordlock_molykote_torque_assembly.jpg', 'Nord-Lock & Molykote 1000 Assembly', 'Nord-Lock washer installation, Molykote 1000 application, and Table 99 sequential tightening')" class="bg-black/40 border border-slate-700 hover:border-amber-400 rounded-lg overflow-hidden cursor-pointer group p-1 transition-all">
+                      <img src="images/nordlock_molykote_torque_assembly.jpg" class="h-24 w-full object-contain rounded group-hover:scale-105 transition-transform">
+                      <div class="text-[10px] text-blue-300 font-medium truncate pt-1">Nord-Lock & Molykote</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- Action Checklist -->
+            <div class="space-y-1.5 pt-1">
+              <div class="font-bold text-xs text-blue-400 uppercase tracking-wide">CAMTECH Official Troubleshooting Steps:</div>
+              <div class="space-y-1.5">
+                ${(bestMatch.troubleshooting_steps || []).map((step, idx) => `
+                  <label class="flex items-start gap-2 p-2 rounded bg-[var(--card,#1e293b)]/60 border border-[var(--card-border,#334155)] cursor-pointer hover:bg-[var(--border,#334155)]/30 transition-colors">
+                    <input type="checkbox" class="mt-0.5 rounded accent-blue-600">
+                    <span class="text-xs text-[var(--foreground,#f8fafc)]">${step}</span>
+                  </label>
+                `).join('')}
+              </div>
+            </div>
+
+            ${customCitationHtml}
+            ${relatedChipsHtml}
+
+            <!-- Quick Action Bar -->
+            <div class="pt-2 flex items-center justify-between text-[11px] text-[var(--muted-foreground,#94a3b8)]">
+              <span>IRCAMTECH / RDSO / Medha MAE675UV2</span>
+              <button onclick="fillIncidentReport('${bestMatch.category}', '${bestMatch.code}', '${bestMatch.safety_speed_restriction}')" class="text-amber-400 hover:underline">
+                Log into Incident Card ➔
+              </button>
+            </div>
+          `;
+          appendBotResponse(responseHtml);
+        } else {
+          // General Response
+          appendBotResponse(`
+            <p class="font-medium text-[var(--foreground,#f8fafc)]">
+              I searched the <span class="text-blue-400 font-semibold">CAMTECH Vande Bharat Volume 1 Manual (653 pages)</span> for "<em>${userQuery}</em>".
+            </p>
+            <p class="text-xs text-[var(--muted-foreground,#94a3b8)]">
+              Enter any exact DDU fault code or choose an option below:
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs pt-1">
+              <button onclick="sendToChat('12803')" class="p-2 text-left rounded bg-[var(--card,#1e293b)] hover:bg-[var(--border,#334155)] border border-[var(--card-border,#334155)]">
+                🚪 <strong>12803:</strong> ADCR Door Loop Open
+              </button>
+              <button onclick="sendToChat('17051')" class="p-2 text-left rounded bg-[var(--card,#1e293b)] hover:bg-[var(--border,#334155)] border border-[var(--card-border,#334155)]">
+                🛑 <strong>17051:</strong> Locked Axle Detected
+              </button>
+              <button onclick="sendToChat('10767')" class="p-2 text-left rounded bg-[var(--card,#1e293b)] hover:bg-[var(--border,#334155)] border border-[var(--card-border,#334155)]">
+                ⚡ <strong>10767:</strong> ACU Auxiliary Under Voltage
+              </button>
+              <button onclick="sendToChat('14613')" class="p-2 text-left rounded bg-[var(--card,#1e293b)] hover:bg-[var(--border,#334155)] border border-[var(--card-border,#334155)]">
+                ❄️ <strong>14613:</strong> HVAC Comp Low Pressure
+              </button>
+              <button onclick="sendToChat('Chapters Overview')" class="p-2 text-left rounded bg-[var(--card,#1e293b)] hover:bg-[var(--border,#334155)] border border-[var(--card-border,#334155)] col-span-1 md:col-span-2 text-center text-blue-400">
+                📚 <strong>View All 7 Manual Chapters & Codes</strong>
+              </button>
+            </div>
+          `);
+        }
+      }, 250);
+    }
+
+    
+    // Fullscreen Image Modal Functions
+    function openImageModal(imgSrc, title, caption) {
+      const modal = document.getElementById('image-modal');
+      const elem = document.getElementById('modal-img-elem');
+      const titleEl = document.getElementById('modal-img-title');
+      const capEl = document.getElementById('modal-img-caption');
+
+      if (modal && elem) {
+        elem.src = imgSrc;
+        if (titleEl) titleEl.innerText = title || 'Technical Illustration';
+        if (capEl) capEl.innerText = caption || 'Official Indian Railways Drawing';
+        modal.classList.remove('hidden');
+      }
+    }
+
+    function closeImageModal() {
+      const modal = document.getElementById('image-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeImageModal();
+    });
+
+    const modalBackdrop = document.getElementById('image-modal');
+    if (modalBackdrop) {
+      modalBackdrop.addEventListener('click', (e) => {
+        if (e.target === modalBackdrop) closeImageModal();
+      });
+    }
+
+    // Incident Report Generator Logic
+    function updateReportPreview() {
+      const train = document.getElementById('rep-train-no').value;
+      const coach = document.getElementById('rep-coach-no').value;
+      const lp = document.getElementById('rep-lp-name').value;
+      const loc = document.getElementById('rep-location').value;
+      const fault = document.getElementById('rep-fault-select').value;
+      const speed = document.getElementById('rep-speed').value;
+      const notes = document.getElementById('rep-action-notes').value;
+      const now = new Date().toLocaleString();
+
+      const previewHtml = `
+========================================================================
+             INDIAN RAILWAYS - TRAINSET 18 (VANDE BHARAT)
+                EN-ROUTE TROUBLESHOOTING & DEFECT LOG
+========================================================================
+DATE & TIME: ${now}
+TRAIN NUMBER: ${train}
+COACH POSITION: ${coach}
+CREW / LP ID: ${lp}
+SECTION / KM: ${loc}
+------------------------------------------------------------------------
+DIAGNOSTIC / FAULT CODE:
+  ${fault}
+
+APPLIED SPEED RESTRICTION (Vmax):
+  >>> ${speed} <<<
+
+ACTION TAKEN / RESOLUTION LOG:
+  ${notes}
+
+REFERENCE MANUAL:
+  IRCAMTECH/RDSO En-Route Troubleshooting Handbook (CAMTECH/E/2023-24/VB)
+  Authority: Indian Railways Centre for Advanced Maintenance Technology
+
+STATUS: ISOLATION RECORDED IN TCMS DDU & SECTION CONTROLLER NOTIFIED.
+========================================================================
+      `;
+
+      document.getElementById('report-card-view').innerHTML = `<pre class="whitespace-pre-wrap text-[11px] leading-relaxed text-emerald-400">${previewHtml}</pre>`;
+    }
+
+    updateReportPreview();
+    document.getElementById('update-preview-btn').addEventListener('click', updateReportPreview);
+
+    function fillIncidentReport(subsystem, code, speed) {
+      switchTab('tab-report');
+      document.getElementById('rep-action-notes').value = `Identified fault ${code} in ${subsystem}. Followed CAMTECH SOP: verified isolation status, ensured mechanical clearance, and logged speed restriction: ${speed}.`;
+      updateReportPreview();
+    }
+
+    document.getElementById('copy-report-btn').addEventListener('click', () => {
+      const text = document.getElementById('report-card-view').innerText;
+      navigator.clipboard.writeText(text);
+      alert('Incident Report Card copied to clipboard!');
+    });
+
+    document.getElementById('print-report-btn').addEventListener('click', () => {
+      window.print();
+    });
+
+    // Theme toggle
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      document.body.classList.toggle('light-theme');
+      if (document.body.classList.contains('light-theme')) {
+        document.body.style.backgroundColor = '#f1f5f9';
+        document.body.style.color = '#0f172a';
+      } else {
+        document.body.style.backgroundColor = '';
+        document.body.style.color = '';
+      }
+    });
+  </script>
+
+  <!-- Fullscreen Image Preview Modal -->
+  <div id="image-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm hidden flex items-center justify-center p-4 transition-all">
+    <div class="relative max-w-4xl w-full bg-[var(--card,#1e293b)] border border-[var(--card-border,#334155)] rounded-2xl overflow-hidden shadow-2xl space-y-3 p-4">
+      <div class="flex items-center justify-between pb-2 border-b border-[var(--card-border,#334155)]">
+        <div>
+          <h4 id="modal-img-title" class="font-bold text-sm text-[var(--foreground,#f8fafc)]">Technical Illustration</h4>
+          <p id="modal-img-caption" class="text-xs text-[var(--muted-foreground,#94a3b8)]">Official Indian Railways Technical Drawing</p>
+        </div>
+        <button onclick="closeImageModal()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-red-600 text-white font-bold flex items-center justify-center transition-colors">
+          ✕
+        </button>
+      </div>
+      <div class="flex items-center justify-center bg-black/60 rounded-xl p-2 max-h-[72vh] overflow-hidden">
+        <img id="modal-img-elem" src="" alt="Enlarged View" class="max-h-[68vh] w-auto object-contain rounded shadow">
+      </div>
+      <div class="flex items-center justify-between text-[11px] text-[var(--muted-foreground,#94a3b8)] pt-1">
+        <span>Press ESC or click ✕ to close</span>
+        <span class="font-mono text-blue-400">IRCAMTECH / ICF Technical Documentation</span>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
